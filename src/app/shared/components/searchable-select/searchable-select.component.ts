@@ -52,8 +52,8 @@ export interface SearchableSelectOption {
 })
 export class SearchableSelectComponent implements ControlValueAccessor {
   readonly options = input<SearchableSelectOption[]>([]);
-  readonly placeholder = input<string>('Select…');
-  readonly searchPlaceholder = input<string>('Search…');
+  readonly placeholder = input<string>('اختر...');
+  readonly searchPlaceholder = input<string>('بحث...');
   /**
    * Caller-driven disable (e.g. while the list is still loading). Combined
    * with the Reactive-Forms disabled state from `setDisabledState`, so the
@@ -66,7 +66,7 @@ export class SearchableSelectComponent implements ControlValueAccessor {
    */
   readonly allowCreate = input<boolean>(false);
   /** Label for the create row. */
-  readonly createLabel = input<string>('+ Add new item');
+  readonly createLabel = input<string>('+ إضافة عنصر جديد');
 
   /**
    * Emits the current search term when the user clicks the create row.

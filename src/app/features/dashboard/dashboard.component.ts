@@ -11,20 +11,20 @@ import { StatCardComponent } from '../../shared/components/stat-card/stat-card.c
   template: `
     <div class="pgh">
       <div>
-        <div class="pgt">Dashboard</div>
-        <div class="pgs">Welcome back, {{ auth.currentUser()?.name }}</div>
+        <div class="pgt">لوحة التحكم</div>
+        <div class="pgs">أهلاً بعودتك، {{ auth.currentUser()?.name }}</div>
       </div>
     </div>
 
     <div class="row g-3">
       <div class="col-md-4">
-        <app-stat-card label="Example metric" value="1,024" sub="+12% this month" />
+        <app-stat-card label="مؤشر تجريبي" value="1,024" sub="+12% هذا الشهر" />
       </div>
       <div class="col-md-4">
-        <app-stat-card label="Another metric" value="87" />
+        <app-stat-card label="مؤشر آخر" value="87" />
       </div>
       <div class="col-md-4">
-        <app-stat-card label="Your role" [value]="auth.currentUser()?.role ?? '—'" />
+        <app-stat-card label="دورك" [value]="auth.currentUser()?.role ?? '—'" />
       </div>
     </div>
   `,

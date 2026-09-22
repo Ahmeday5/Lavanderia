@@ -24,8 +24,8 @@ export class TopbarComponent {
   logout(): void {
     this.dialog
       .confirm({
-        title: 'Sign out',
-        message: 'Are you sure you want to sign out?',
+        title: 'تسجيل الخروج',
+        message: 'هل أنت متأكد أنك تريد تسجيل الخروج؟',
         type: 'warning',
       })
       .then((confirmed) => {

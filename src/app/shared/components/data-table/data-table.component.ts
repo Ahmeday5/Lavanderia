@@ -30,8 +30,8 @@ export class DataTableComponent<T extends Record<string, any>> {
   trackByKey = input<string>('id');
   hasActions = input<boolean>(false);
   rowClickable = input<boolean>(false);
-  emptyMessage = input<string>('No data available');
-  actionsLabel = input<string>('Actions');
+  emptyMessage = input<string>('لا توجد بيانات متاحة');
+  actionsLabel = input<string>('الإجراءات');
 
   rowClick = output<T>();
 

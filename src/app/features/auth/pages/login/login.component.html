@@ -13,30 +13,33 @@
     </div>
 
     <div class="auth-brand__body">
-      <h1 class="auth-brand__title">Manage your laundry business, effortlessly.</h1>
+      <h1 class="auth-brand__title">إدارة أعمال المغسلة بكل سهولة.</h1>
       <p class="auth-brand__subtitle">
-        One dashboard for orders, branches, staff and customers — built for speed and clarity.
+        لوحة تحكم واحدة للطلبات والفروع والموظفين والعملاء — مصممة للسرعة والوضوح.
       </p>
 
       <div class="auth-brand__features">
         <div class="auth-brand__feature">
-          <i class="fa-solid fa-bolt"></i>
-          <span>Real-time order tracking across all branches</span>
+          <span class="auth-brand__feature-icon"><i class="fa-solid fa-bolt"></i></span>
+          <span>تتبّع الطلبات لحظيًا عبر جميع الفروع</span>
         </div>
         <div class="auth-brand__feature">
-          <i class="fa-solid fa-shield-halved"></i>
-          <span>Secure, role-based access for your whole team</span>
+          <span class="auth-brand__feature-icon"><i class="fa-solid fa-shield-halved"></i></span>
+          <span>صلاحيات آمنة قائمة على الأدوار لفريق العمل بأكمله</span>
         </div>
         <div class="auth-brand__feature">
-          <i class="fa-solid fa-chart-line"></i>
-          <span>Insights that help you grow with confidence</span>
+          <span class="auth-brand__feature-icon"><i class="fa-solid fa-chart-line"></i></span>
+          <span>تقارير وإحصائيات تساعدك على النمو بثقة</span>
         </div>
       </div>
     </div>
 
     <div class="auth-brand__footer">
-      <span>&copy; {{ currentYear }} Lavanderia</span>
-      <span>Laundry Service Platform</span>
+      <div class="d-flex flex-raw gap-1">
+        <span>&copy; {{ currentYear }} Lavanderia</span>
+        <span>منصة إدارة خدمات المغاسل</span>
+      </div>
+      <span>Developed by TheOneSystem</span>
     </div>
   </aside>
 
@@ -47,72 +50,54 @@
         <img src="/assets/img/logo.png" alt="Lavanderia" />
       </div>
 
-      <h2 class="fw-bold mb-1 auth-title">Welcome back</h2>
-      <p class="mb-4 auth-subtitle">Sign in to access your dashboard</p>
+      <h2 class="fw-bold mb-1 auth-title">مرحبًا بعودتك</h2>
+      <p class="mb-4 auth-subtitle">سجّل الدخول للوصول إلى لوحة التحكم</p>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
         <div class="mb-3">
-          <label class="form-label">Email</label>
+          <label class="form-label">البريد الإلكتروني</label>
           <div class="auth-field">
             <i class="fa-solid fa-envelope auth-field__icon"></i>
-            <input
-              type="email"
-              class="form-control"
-              formControlName="email"
-              autocomplete="email"
-              placeholder="you@example.com"
-              [class.is-invalid]="isInvalid('email')"
-            />
+            <input type="email" class="form-control" formControlName="email" autocomplete="email"
+              placeholder="you@example.com" dir="ltr" [class.is-invalid]="isInvalid('email')" />
           </div>
-          <app-form-error [control]="form.controls.email" label="Email" />
+          <app-form-error [control]="form.controls.email" label="البريد الإلكتروني" />
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Password</label>
+          <label class="form-label">كلمة المرور</label>
           <div class="auth-field">
             <i class="fa-solid fa-lock auth-field__icon"></i>
-            <app-password-input
-              formControlName="password"
-              placeholder="••••••••"
-              autocomplete="current-password"
-            />
+            <app-password-input formControlName="password" placeholder="••••••••" autocomplete="current-password" />
           </div>
-          <app-form-error [control]="form.controls.password" label="Password" />
+          <app-form-error [control]="form.controls.password" label="كلمة المرور" />
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="mb-3">
           <div class="form-check auth-check">
             <input class="form-check-input" type="checkbox" id="rememberMe" formControlName="rememberMe" />
-            <label class="form-check-label" for="rememberMe">Remember me</label>
+            <label class="form-check-label" for="rememberMe">تذكرني</label>
           </div>
-          <a routerLink="/auth/forgot-password" class="auth-link">Forgot password?</a>
         </div>
 
         @if (serverError(); as msg) {
-          <div class="alert alert-danger auth-alert" role="alert">
-            <i class="fa-solid fa-circle-exclamation"></i>
-            <span>{{ msg }}</span>
-          </div>
+        <div class="alert alert-danger auth-alert" role="alert">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span>{{ msg }}</span>
+        </div>
         }
 
-        <button
-          type="submit"
-          class="btn auth-submit w-100 d-flex align-items-center justify-content-center gap-2"
-          [disabled]="isSubmitting()"
-        >
+        <button type="submit" class="btn auth-submit w-100 d-flex align-items-center justify-content-center gap-2"
+          [disabled]="isSubmitting()">
           @if (isSubmitting()) {
-            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            <span>Signing in...</span>
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <span>جارٍ تسجيل الدخول...</span>
           } @else {
-            <i class="fa-solid fa-arrow-right-to-bracket"></i>
-            <span>Sign in</span>
+          <i class="fa-solid fa-arrow-right-to-bracket"></i>
+          <span>تسجيل الدخول</span>
           }
         </button>
       </form>
-
-      <p class="auth-footer">
-        Don't have an account? <a routerLink="/auth/register" class="auth-link">Register</a>
-      </p>
     </div>
   </div>
 </div>

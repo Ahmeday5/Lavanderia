@@ -5,7 +5,7 @@ import {
   signal,
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ApiError } from '../../../../core/models/api-response.model';
@@ -17,7 +17,7 @@ import { DEFAULT_AUTHENTICATED_ROUTE } from '../../../../core/auth/auth.config';
   selector: 'app-login',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, FormErrorComponent, PasswordInputComponent],
+  imports: [ReactiveFormsModule, FormErrorComponent, PasswordInputComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
@@ -60,7 +60,7 @@ export class LoginComponent {
     this.auth.login({ email, password, rememberMe }).subscribe({
       next: (user) => {
         this.isSubmitting.set(false);
-        this.toast.success(`Welcome back, ${user.name}`);
+        this.toast.success(`أهلاً بعودتك، ${user.name}`);
         this.router.navigateByUrl(this.resolveReturnUrl());
       },
       error: (err: ApiError) => {

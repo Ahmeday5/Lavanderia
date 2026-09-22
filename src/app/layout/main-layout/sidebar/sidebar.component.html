@@ -1,12 +1,12 @@
 <nav class="sidebar" [class.collapsed]="layout.collapsed()" [class.open]="layout.mobileOpen()">
   <!-- Collapse toggle (desktop only) -->
   <button class="sb-toggle" (click)="layout.toggleCollapsed()"
-    [title]="layout.collapsed() ? 'Expand menu' : 'Collapse menu'">
+    [title]="layout.collapsed() ? 'توسيع القائمة' : 'طي القائمة'">
     <svg class="sb-toggle-icon" [class.flipped]="layout.collapsed()" width="14" height="14" viewBox="0 0 14 14"
       fill="none">
       <path d="M5 2l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
-    <span class="sb-toggle-label">Collapse</span>
+    <span class="sb-toggle-label">طي القائمة</span>
   </button>
 
   <!-- Nav sections -->

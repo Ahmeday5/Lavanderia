@@ -132,8 +132,20 @@
 .sb-toggle-icon {
   flex-shrink: 0;
   transition: transform var(--sb-transition);
+
+  // Base glyph points toward the collapse edge in LTR (sidebar on the left).
+  // In RTL the sidebar renders on the right (flex row auto-mirrors), so the
+  // "point toward the edge" direction is reversed — mirror the whole icon.
+  [dir="rtl"] & {
+    transform: scaleX(-1);
+  }
+
   &.flipped {
     transform: rotate(180deg);
+
+    [dir="rtl"] & {
+      transform: scaleX(-1) rotate(180deg);
+    }
   }
 }
 

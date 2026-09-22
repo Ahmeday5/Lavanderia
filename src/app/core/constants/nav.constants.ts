@@ -10,16 +10,16 @@ import { MenuSection } from '../models/menu-item.model';
  */
 export const NAV_SECTIONS: MenuSection[] = [
   {
-    label: 'Main',
+    label: 'الرئيسية',
     items: [
-      { id: 'dashboard', label: 'Dashboard', route: '/dashboard', icon: 'home' },
+      { id: 'dashboard', label: 'لوحة التحكم', route: '/dashboard', icon: 'home' },
     ],
   },
   {
-    label: 'Administration',
+    label: 'الإدارة',
     items: [
-      { id: 'users', label: 'Users', route: '/users', icon: 'users', permissions: ['Users.Manage'] },
-      { id: 'settings', label: 'Settings', route: '/settings', icon: 'settings', roles: ['Admin'] },
+      { id: 'users', label: 'المستخدمون', route: '/users', icon: 'users', permissions: ['Users.Manage'] },
+      { id: 'settings', label: 'الإعدادات', route: '/settings', icon: 'settings', roles: ['Admin'] },
     ],
   },
 ];

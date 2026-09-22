@@ -44,37 +44,43 @@ function resolveMessage(
   }
 
   if (errors['required'] !== undefined) {
-    return `${label} is required`;
+    return `${label} مطلوب`;
   }
   if (errors['email'] !== undefined) {
-    return `${label} format is invalid`;
+    return `صيغة ${label} غير صحيحة`;
   }
   if (errors['minlength']) {
     const req = errors['minlength'].requiredLength;
-    return `${label} must be at least ${req} characters`;
+    return `${label} يجب أن يكون ${req} أحرف على الأقل`;
   }
   if (errors['maxlength']) {
     const req = errors['maxlength'].requiredLength;
-    return `${label} must be at most ${req} characters`;
+    return `${label} يجب ألا يزيد عن ${req} حرفًا`;
   }
   if (errors['min'] !== undefined) {
-    return `${label} must be ${errors['min'].min} or more`;
+    return `${label} يجب أن يكون ${errors['min'].min} أو أكثر`;
   }
   if (errors['max'] !== undefined) {
-    return `${label} must be ${errors['max'].max} or less`;
+    return `${label} يجب أن يكون ${errors['max'].max} أو أقل`;
   }
   if (errors['pattern'] !== undefined) {
-    return `${label} is invalid`;
+    return `صيغة ${label} غير صحيحة`;
   }
   if (errors['mismatch'] !== undefined) {
-    return `${label} does not match`;
+    return `${label} غير متطابق`;
+  }
+  if (errors['strongPassword'] !== undefined) {
+    return `${label} يجب أن يحتوي على حرف كبير وحرف صغير ورقم، وألا يقل عن 8 أحرف`;
+  }
+  if (errors['phone'] !== undefined) {
+    return `${label} غير صحيح`;
   }
 
   // Unknown validator — show the raw key as a graceful fallback.
   const firstKey = Object.keys(errors)[0];
   const value = errors[firstKey];
   if (typeof value === 'string') return value;
-  return `${label} is invalid`;
+  return `${label} غير صحيح`;
 }
 
 // ─────────────────────── reusable validators ───────────────────────

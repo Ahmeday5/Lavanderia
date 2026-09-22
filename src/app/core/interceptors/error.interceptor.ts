@@ -46,7 +46,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
 function normalizeError(err: HttpErrorResponse): ApiError {
   const status = err.status ?? 0;
-  const body = err.error ?? {};
+  // Status 0 means the browser blocked the request before any server
+  // response arrived (CORS, DNS, offline, timeout) — `err.error` is then a
+  // native `TypeError`/`ProgressEvent`, not a real API payload, so its
+  // `.message` ("Failed to fetch") must never be treated as a server message.
+  const body = status === 0 ? {} : err.error ?? {};
 
   const rawMessage: string =
     body?.message || body?.error || body?.detail || body?.title || '';
@@ -70,25 +74,25 @@ function statusMessage(status: number, err: HttpErrorResponse): string {
     // CORS or DNS/network failure. The browser hides the real cause for
     // security reasons; the only readable hint is `err.message`.
     return err.message?.includes('Failed to fetch')
-      ? 'Could not reach the server (CORS or network issue). Check the console for details.'
-      : 'Could not reach the server. Check your internet connection.';
+      ? 'تعذر الوصول إلى الخادم (مشكلة في CORS أو الشبكة). راجع الـ console لمزيد من التفاصيل.'
+      : 'تعذر الوصول إلى الخادم. تحقق من اتصالك بالإنترنت.';
   }
 
   const messages: Record<number, string> = {
-    400: 'Invalid request',
-    401: 'Invalid credentials',
-    403: "You don't have permission to perform this action",
-    404: 'The requested resource was not found',
-    409: 'A conflict occurred',
-    422: 'Validation failed',
-    429: 'Too many requests — please wait a moment',
-    500: 'Server error — please try again later',
-    502: 'The service is temporarily unavailable',
-    503: 'The service is temporarily unavailable',
-    504: 'The request to the server timed out',
+    400: 'طلب غير صالح',
+    401: 'بيانات الدخول غير صحيحة',
+    403: 'ليس لديك صلاحية للقيام بهذا الإجراء',
+    404: 'العنصر المطلوب غير موجود',
+    409: 'حدث تعارض في البيانات',
+    422: 'فشل التحقق من صحة البيانات',
+    429: 'عدد كبير جدًا من الطلبات — يرجى الانتظار قليلاً',
+    500: 'خطأ في الخادم — يرجى المحاولة لاحقًا',
+    502: 'الخدمة غير متاحة مؤقتًا',
+    503: 'الخدمة غير متاحة مؤقتًا',
+    504: 'انتهت مهلة الاتصال بالخادم',
   };
 
-  return messages[status] ?? `Unexpected error (${status})`;
+  return messages[status] ?? `حدث خطأ غير متوقع (${status})`;
 }
 
 function logError(

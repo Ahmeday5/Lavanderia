@@ -1,7 +1,7 @@
 <header class="topbar">
 
   <!-- Mobile: hamburger to open sidebar drawer -->
-  <button class="t-hamburger" (click)="layout.toggleMobile()" aria-label="Menu">
+  <button class="t-hamburger" (click)="layout.toggleMobile()" aria-label="القائمة">
     @if (layout.mobileOpen()) {
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
       <path d="M3 3l12 12M15 3L3 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
@@ -27,7 +27,7 @@
     <span class="trole">{{ currentUser()?.role }}</span>
 
     <!-- Logout -->
-    <button class="btn btn-sm" (click)="logout()" title="Sign out">Sign out</button>
+    <button class="btn btn-sm" (click)="logout()" title="تسجيل الخروج">تسجيل الخروج</button>
   </div>
 
 </header>

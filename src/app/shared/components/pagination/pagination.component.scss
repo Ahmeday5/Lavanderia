@@ -127,6 +127,15 @@
       color: var(--txt);
     }
   }
+
+  // Chevron/edge glyphs are drawn pointing left-to-right; mirror them in RTL
+  // so "next"/"last" still point toward the end of the reading direction.
+  &--step svg,
+  &--edge svg {
+    [dir="rtl"] & {
+      transform: scaleX(-1);
+    }
+  }
 }
 
 // ── Ellipsis ──────────────────────────────────────────────────────────────────

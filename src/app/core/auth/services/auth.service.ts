@@ -19,13 +19,10 @@ import { HttpCacheService } from '../../services/http-cache.service';
 import {
   AuthResponseData,
   AuthTokens,
-  ForgotPasswordRequest,
   LoginRequest,
   LogoutRequest,
   MePermissionsData,
   RefreshTokenRequest,
-  RegisterRequest,
-  ResetPasswordRequest,
   User,
   UserRole,
 } from '../models/auth.model';
@@ -86,12 +83,6 @@ export interface LoginInput {
   email: string;
   password: string;
   rememberMe: boolean;
-}
-
-export interface RegisterInput {
-  name: string;
-  email: string;
-  password: string;
 }
 
 interface LogoutOptions {
@@ -178,30 +169,6 @@ export class AuthService {
         }),
         switchMap((data) => this.hydratePermissions(this.toUser(data)))
       );
-  }
-
-  register(input: RegisterInput): Observable<unknown> {
-    const payload: RegisterRequest = {
-      name: input.name.trim(),
-      email: input.email.trim(),
-      password: input.password,
-    };
-    return this.api.post<unknown>(AUTH_ENDPOINTS.register, payload, {
-      context: withInlineHandling(withSkipAuth()),
-    });
-  }
-
-  forgotPassword(email: string): Observable<unknown> {
-    const payload: ForgotPasswordRequest = { email: email.trim() };
-    return this.api.post<unknown>(AUTH_ENDPOINTS.forgotPassword, payload, {
-      context: withInlineHandling(withSkipAuth()),
-    });
-  }
-
-  resetPassword(input: ResetPasswordRequest): Observable<unknown> {
-    return this.api.post<unknown>(AUTH_ENDPOINTS.resetPassword, input, {
-      context: withInlineHandling(withSkipAuth()),
-    });
   }
 
   /**
@@ -295,7 +262,7 @@ export class AuthService {
     // crucially don't trigger another logout/redirect (the first one
     // already happened, the second one races Angular's navigation).
     if (this.sessionDead) {
-      return throwError(() => this.makeAuthError('Session expired'));
+      return throwError(() => this.makeAuthError('انتهت صلاحية الجلسة'));
     }
 
     // Race shortcut (no lock needed): another tab may have already refreshed
@@ -394,7 +361,7 @@ export class AuthService {
           // is also being torn down, so propagating a quiet auth error is
           // the right call — nothing useful can act on it.
           if ((err as DOMException | undefined)?.name === 'InvalidStateError') {
-            return throwError(() => this.makeAuthError('Refresh aborted'));
+            return throwError(() => this.makeAuthError('تم إلغاء تحديث الجلسة'));
           }
           return throwError(() => err);
         })
@@ -407,7 +374,7 @@ export class AuthService {
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
       this.scheduleSessionExpiredLogout();
-      return throwError(() => this.makeAuthError('Missing refresh token'));
+      return throwError(() => this.makeAuthError('رمز التحديث غير موجود'));
     }
 
     const dev = this.device.getInfo();
@@ -828,7 +795,7 @@ export class AuthService {
       this.logout({
         redirect: true,
         callApi: false,
-        reason: 'Your session has expired, please sign in again',
+        reason: 'انتهت صلاحية جلستك، يرجى تسجيل الدخول مرة أخرى',
       });
     });
   }
