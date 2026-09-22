@@ -4,7 +4,7 @@ export const environment = {
   appVersion: '1.0.0',
   defaultLang: 'en',
 
-  apiUrl: 'https://api.example.com/api',
+  apiUrl: 'https://lavanderia.runasp.net/api',
   tokenKey: 'app_access_token',
   refreshTokenKey: 'app_refresh_token',
 };

@@ -169,7 +169,13 @@ export class AuthService {
         context: withInlineHandling(withSkipAuth()),
       })
       .pipe(
-        tap((data) => this.persistSession(data, true)),
+        tap((data) => {
+          // Decide the storage backend BEFORE writing tokens: "remember me"
+          // checked → localStorage (survives browser restarts), unchecked →
+          // sessionStorage (cleared when the tab/browser closes).
+          this.storage.setMode(input.rememberMe ? 'persistent' : 'session');
+          this.persistSession(data, true);
+        }),
         switchMap((data) => this.hydratePermissions(this.toUser(data)))
       );
   }
@@ -527,9 +533,9 @@ export class AuthService {
   }
 
   private clearLocalSession(): void {
-    this.storage.remove(environment.tokenKey);
-    this.storage.remove(environment.refreshTokenKey);
-    this.storage.remove(USER_KEY);
+    this.storage.removeEverywhere(environment.tokenKey);
+    this.storage.removeEverywhere(environment.refreshTokenKey);
+    this.storage.removeEverywhere(USER_KEY);
     this.currentUserSignal.set(null);
     this.cancelScheduledRefresh();
     this.inflightRefresh = null;

@@ -32,6 +32,7 @@ export class LoginComponent {
   protected readonly isSubmitting = signal(false);
   /** Inline error displayed inside the form (no global toast for credential errors). */
   protected readonly serverError = signal<string | null>(null);
+  protected readonly currentYear = new Date().getFullYear();
 
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],

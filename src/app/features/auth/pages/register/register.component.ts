@@ -25,6 +25,7 @@ export class RegisterComponent {
 
   protected readonly isSubmitting = signal(false);
   protected readonly serverError = signal<string | null>(null);
+  protected readonly currentYear = new Date().getFullYear();
 
   protected readonly form = this.fb.nonNullable.group(
     {

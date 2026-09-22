@@ -1,62 +1,118 @@
 <div class="auth-page">
-  <div class="auth-card">
-    <h2 class="fw-bold mb-1 auth-title">Sign in</h2>
-    <p class="mb-4 auth-subtitle">Enter your credentials to access the dashboard</p>
+  <!-- Branding panel -->
+  <aside class="auth-brand" aria-hidden="true">
+    <div class="auth-brand__grid"></div>
+    <div class="auth-brand__glow"></div>
+    <span class="auth-brand__orb auth-brand__orb--a"></span>
+    <span class="auth-brand__orb auth-brand__orb--b"></span>
+    <span class="auth-brand__orb auth-brand__orb--c"></span>
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-      <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input
-          type="email"
-          class="form-control"
-          formControlName="email"
-          autocomplete="email"
-          placeholder="you@example.com"
-          [class.is-invalid]="isInvalid('email')"
-        />
-        <app-form-error [control]="form.controls.email" label="Email" />
-      </div>
+    <div class="auth-brand__logo">
+      <span class="auth-brand__logo-badge"><i class="fa-solid fa-shirt"></i></span>
+      <span>Lavanderia</span>
+    </div>
 
-      <div class="mb-3">
-        <label class="form-label">Password</label>
-        <app-password-input
-          formControlName="password"
-          placeholder="••••••••"
-          autocomplete="current-password"
-        />
-        <app-form-error [control]="form.controls.password" label="Password" />
-      </div>
+    <div class="auth-brand__body">
+      <h1 class="auth-brand__title">Manage your laundry business, effortlessly.</h1>
+      <p class="auth-brand__subtitle">
+        One dashboard for orders, branches, staff and customers — built for speed and clarity.
+      </p>
 
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" id="rememberMe" formControlName="rememberMe" />
-          <label class="form-check-label" for="rememberMe">Remember me</label>
+      <div class="auth-brand__features">
+        <div class="auth-brand__feature">
+          <i class="fa-solid fa-bolt"></i>
+          <span>Real-time order tracking across all branches</span>
         </div>
-        <a routerLink="/auth/forgot-password" class="auth-link">Forgot password?</a>
+        <div class="auth-brand__feature">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Secure, role-based access for your whole team</span>
+        </div>
+        <div class="auth-brand__feature">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Insights that help you grow with confidence</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-brand__footer">
+      <span>&copy; {{ currentYear }} Lavanderia</span>
+      <span>Laundry Service Platform</span>
+    </div>
+  </aside>
+
+  <!-- Form panel -->
+  <div class="auth-form-panel">
+    <div class="auth-card">
+      <div class="auth-card__logo">
+        <img src="/assets/img/logo.png" alt="Lavanderia" />
       </div>
 
-      @if (serverError(); as msg) {
-        <div class="alert alert-danger auth-alert" role="alert">
-          <span>{{ msg }}</span>
-        </div>
-      }
+      <h2 class="fw-bold mb-1 auth-title">Welcome back</h2>
+      <p class="mb-4 auth-subtitle">Sign in to access your dashboard</p>
 
-      <button
-        type="submit"
-        class="btn btn-bl w-100 d-flex align-items-center justify-content-center gap-2"
-        [disabled]="isSubmitting()"
-      >
-        @if (isSubmitting()) {
-          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-          <span>Signing in...</span>
-        } @else {
-          <span>Sign in</span>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <div class="auth-field">
+            <i class="fa-solid fa-envelope auth-field__icon"></i>
+            <input
+              type="email"
+              class="form-control"
+              formControlName="email"
+              autocomplete="email"
+              placeholder="you@example.com"
+              [class.is-invalid]="isInvalid('email')"
+            />
+          </div>
+          <app-form-error [control]="form.controls.email" label="Email" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <div class="auth-field">
+            <i class="fa-solid fa-lock auth-field__icon"></i>
+            <app-password-input
+              formControlName="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+          </div>
+          <app-form-error [control]="form.controls.password" label="Password" />
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="form-check auth-check">
+            <input class="form-check-input" type="checkbox" id="rememberMe" formControlName="rememberMe" />
+            <label class="form-check-label" for="rememberMe">Remember me</label>
+          </div>
+          <a routerLink="/auth/forgot-password" class="auth-link">Forgot password?</a>
+        </div>
+
+        @if (serverError(); as msg) {
+          <div class="alert alert-danger auth-alert" role="alert">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>{{ msg }}</span>
+          </div>
         }
-      </button>
-    </form>
 
-    <p class="auth-footer">
-      Don't have an account? <a routerLink="/auth/register" class="auth-link">Register</a>
-    </p>
+        <button
+          type="submit"
+          class="btn auth-submit w-100 d-flex align-items-center justify-content-center gap-2"
+          [disabled]="isSubmitting()"
+        >
+          @if (isSubmitting()) {
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            <span>Signing in...</span>
+          } @else {
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            <span>Sign in</span>
+          }
+        </button>
+      </form>
+
+      <p class="auth-footer">
+        Don't have an account? <a routerLink="/auth/register" class="auth-link">Register</a>
+      </p>
+    </div>
   </div>
 </div>

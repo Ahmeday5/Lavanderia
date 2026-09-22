@@ -20,6 +20,7 @@ export class ForgotPasswordComponent {
   protected readonly isSubmitting = signal(false);
   protected readonly serverError = signal<string | null>(null);
   protected readonly submitted = signal(false);
+  protected readonly currentYear = new Date().getFullYear();
 
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],

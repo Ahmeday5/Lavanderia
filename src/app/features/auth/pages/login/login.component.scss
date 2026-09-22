@@ -5,30 +5,195 @@
   width: 100%;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   SPLIT-SCREEN AUTH SHELL
+   Left  → branding panel (blue → black gradient)
+   Right → form panel (white)
+   Shared by login / register / forgot-password / reset-password.
+   ═══════════════════════════════════════════════════════════ */
+
 .auth-page {
   flex: 1;
   min-height: 100%;
   width: 100%;
   display: flex;
+  overflow-y: auto;
+  background: var(--brand-white);
+}
+
+/* ── Brand panel ── */
+.auth-brand {
+  position: relative;
+  flex: 0 0 44%;
+  min-width: 380px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px 44px;
+  background: var(--brand-gradient);
+  color: var(--brand-white);
+  overflow: hidden;
+  isolation: isolate;
+
+  @media (max-width: 991px) {
+    display: none;
+  }
+}
+
+.auth-brand__glow {
+  position: absolute;
+  inset: 0;
+  background: var(--brand-gradient-radial);
+  z-index: -1;
+  animation: brand-glow-drift 14s ease-in-out infinite alternate;
+}
+
+/* Soft floating orbs for depth — purely decorative, aria-hidden in markup */
+.auth-brand__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(2px);
+  z-index: -1;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 70%);
+  animation: brand-orb-float 10s ease-in-out infinite;
+
+  &--a { width: 260px; height: 260px; top: -60px; inset-inline-end: -60px; animation-duration: 12s; }
+  &--b { width: 180px; height: 180px; bottom: 8%; inset-inline-start: -40px; animation-duration: 9s; animation-delay: -3s; }
+  &--c { width: 120px; height: 120px; bottom: 30%; inset-inline-end: 12%; animation-duration: 8s; animation-delay: -1.5s; }
+}
+
+.auth-brand__grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.35;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(ellipse at 30% 20%, #000 0%, transparent 70%);
+}
+
+.auth-brand__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  animation: brand-fade-in-down 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.auth-brand__logo-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  color: var(--brand-white);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.auth-brand__body {
+  animation: brand-fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.auth-brand__title {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin-bottom: 14px;
+}
+
+.auth-brand__subtitle {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.7;
+  max-width: 340px;
+  margin-bottom: 32px;
+}
+
+.auth-brand__features {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-brand__feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.88);
+  opacity: 0;
+  animation: brand-fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  &:nth-child(1) { animation-delay: 0.25s; }
+  &:nth-child(2) { animation-delay: 0.38s; }
+  &:nth-child(3) { animation-delay: 0.51s; }
+
+  i {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    font-size: 12px;
+  }
+}
+
+.auth-brand__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  animation: brand-fade-in-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
+}
+
+/* ── Form panel ── */
+.auth-form-panel {
+  flex: 1;
+  min-height: 100%;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  overflow-y: auto;
-  background: linear-gradient(160deg, var(--bg) 0%, var(--bg3) 100%);
+  position: relative;
 }
 
 .auth-card {
   width: 100%;
   max-width: 380px;
-  background: var(--bg2);
-  border-radius: 18px;
-  padding: 40px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 8px 0;
+  animation: auth-card-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.auth-card__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+
+  img {
+    height: 34px;
+    width: auto;
+  }
 }
 
 .auth-title {
-  font-size: 20px;
+  font-size: 22px;
+  font-weight: 800;
   color: var(--txt);
+  letter-spacing: -0.01em;
 }
 
 .auth-subtitle {
@@ -38,18 +203,149 @@
 
 .auth-alert {
   font-size: 11.5px;
+  animation: auth-shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 .auth-link {
   font-size: 11.5px;
-  color: var(--bl);
+  color: var(--brand);
   text-decoration: none;
-  &:hover { text-decoration: underline; }
+  font-weight: 600;
+  transition: color 0.15s;
+  &:hover { color: var(--brand-d); text-decoration: underline; }
 }
 
 .auth-footer {
-  margin-top: 20px;
+  margin-top: 24px;
   font-size: 11.5px;
   color: var(--txt2);
   text-align: center;
+}
+
+/* ── Field icon affordance (Font Awesome inside inputs) ── */
+.auth-field {
+  position: relative;
+
+  .auth-field__icon {
+    position: absolute;
+    inset-inline-start: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--txt3);
+    font-size: 13px;
+    pointer-events: none;
+    transition: color 0.15s;
+  }
+
+  .form-control {
+    padding-inline-start: 36px;
+  }
+
+  &:focus-within .auth-field__icon {
+    color: var(--brand);
+  }
+
+  ::ng-deep app-password-input .pw-input {
+    padding-inline-start: 36px !important;
+  }
+}
+
+/* ── Buttons on auth pages use the brand gradient ── */
+.auth-submit {
+  position: relative;
+  overflow: hidden;
+  background: var(--brand-gradient);
+  border: none;
+  color: var(--brand-white);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 11px 16px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  box-shadow: 0 10px 24px -8px rgba(10, 42, 74, 0.55);
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px -8px rgba(10, 42, 74, 0.6);
+    color: var(--brand-white);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(21, 104, 184, 0.35);
+  }
+
+  &:disabled {
+    opacity: 0.75;
+  }
+}
+
+/* ── Remember-me checkbox re-skin ── */
+.auth-check {
+  .form-check-input {
+    cursor: pointer;
+    &:checked {
+      background-color: var(--brand);
+      border-color: var(--brand);
+    }
+    &:focus {
+      box-shadow: 0 0 0 3px rgba(21, 104, 184, 0.2);
+      border-color: var(--brand);
+    }
+  }
+  .form-check-label {
+    font-size: 11.5px;
+    color: var(--txt2);
+    cursor: pointer;
+  }
+}
+
+/* ── Animations ── */
+@keyframes auth-card-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes auth-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes brand-fade-in-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes brand-fade-in-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes brand-orb-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-14px, 18px) scale(1.08); }
+}
+
+@keyframes brand-glow-drift {
+  from { opacity: 0.6; transform: translate(0, 0); }
+  to   { opacity: 1; transform: translate(-20px, 10px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-brand__glow,
+  .auth-brand__orb,
+  .auth-brand__logo,
+  .auth-brand__body,
+  .auth-brand__feature,
+  .auth-brand__footer,
+  .auth-card,
+  .auth-alert {
+    animation: none !important;
+  }
 }

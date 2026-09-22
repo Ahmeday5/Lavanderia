@@ -1,0 +1,8 @@
+{
+  "/api": {
+    "target": "https://lavanderia.runasp.net",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}
