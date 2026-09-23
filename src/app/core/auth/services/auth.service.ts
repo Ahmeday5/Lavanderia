@@ -254,8 +254,18 @@ export class AuthService {
    * Locks API and collapsed across concurrent in-tab callers via shared
    * observable. The lock body re-reads storage first: if another tab already
    * rotated the token while we were waiting, we skip the network entirely.
+   *
+   * @param force Skip the "is the stored token still locally fresh" shortcut
+   *   and always hit the network. Required when the caller already knows the
+   *   current access token doesn't work — e.g. `authInterceptor` reacting to
+   *   a server-rejected request — because that check only reads the JWT
+   *   `exp` claim and can't see server-side invalidation. Without `force`, a
+   *   token that's locally unexpired but server-rejected (revoked, corrupted
+   *   in storage, backend key rotation, etc.) makes this method hand back
+   *   the exact same bad token instead of actually refreshing, so the
+   *   interceptor's retry fails identically forever.
    */
-  refreshToken(): Observable<AuthTokens> {
+  refreshToken(force = false): Observable<AuthTokens> {
     if (this.inflightRefresh) return this.inflightRefresh;
 
     // Session was already declared dead — don't try to refresh, and
@@ -266,14 +276,17 @@ export class AuthService {
     }
 
     // Race shortcut (no lock needed): another tab may have already refreshed
-    // and the new tokens are sitting in storage right now.
-    const fromAnotherTab = this.readFreshTokens();
-    if (fromAnotherTab) {
-      this.scheduleProactiveRefresh();
-      return of(fromAnotherTab);
+    // and the new tokens are sitting in storage right now. Skipped when
+    // `force` is set — see the param doc above.
+    if (!force) {
+      const fromAnotherTab = this.readFreshTokens();
+      if (fromAnotherTab) {
+        this.scheduleProactiveRefresh();
+        return of(fromAnotherTab);
+      }
     }
 
-    this.inflightRefresh = this.runUnderRefreshLock().pipe(
+    this.inflightRefresh = this.runUnderRefreshLock(force).pipe(
       finalize(() => {
         this.inflightRefresh = null;
       }),
@@ -331,8 +344,13 @@ export class AuthService {
    * Wraps the refresh round-trip in a Web Lock so only ONE tab in the entire
    * browser profile is in flight at a time. Inside the lock we re-check
    * storage — the tab that held the lock before us may have already rotated.
+   *
+   * @param force See {@link refreshToken} — also skips the "already rotated
+   *   by the previous lock holder" shortcut, since that shortcut is the same
+   *   local-only `exp` check and would otherwise hand back the known-bad
+   *   token instead of actually hitting the network.
    */
-  private runUnderRefreshLock(): Observable<AuthTokens> {
+  private runUnderRefreshLock(force = false): Observable<AuthTokens> {
     const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
 
     // Web Locks unsupported (older browsers, non-browser env) — fall back to
@@ -344,7 +362,7 @@ export class AuthService {
       from(
         locks.request(REFRESH_LOCK_NAME, () => {
           // Inside the lock: did the previous holder already refresh?
-          const fresh = this.readFreshTokens();
+          const fresh = force ? null : this.readFreshTokens();
           if (fresh) {
             this.scheduleProactiveRefresh();
             return Promise.resolve(fresh);
