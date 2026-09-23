@@ -32,6 +32,8 @@ export class DataTableComponent<T extends Record<string, any>> {
   rowClickable = input<boolean>(false);
   emptyMessage = input<string>('لا توجد بيانات متاحة');
   actionsLabel = input<string>('الإجراءات');
+  /** Per-row actions cell, given `{ $implicit: row }` — required when `hasActions` is true. */
+  actionsTemplate = input<TemplateRef<any> | null>(null);
 
   rowClick = output<T>();
 

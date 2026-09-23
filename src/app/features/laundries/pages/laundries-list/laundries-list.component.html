@@ -1,0 +1,170 @@
+<div class="lp">
+  <!-- ── Hero header ── -->
+  <header class="lp-hero">
+    <div class="lp-hero__bubbles" aria-hidden="true">
+      <span class="lp-bubble lp-bubble--a"></span>
+      <span class="lp-bubble lp-bubble--b"></span>
+      <span class="lp-bubble lp-bubble--c"></span>
+    </div>
+
+    <div class="lp-hero__content">
+      <div class="lp-hero__text">
+        <span class="lp-hero__eyebrow">
+          <i class="fa-solid fa-store"></i>
+          شركاء الأعمال
+        </span>
+        <h1 class="lp-hero__title">المغاسل</h1>
+        <p class="lp-hero__subtitle">
+          إدارة ومراقبة المغاسل الشريكة المسجّلة على المنصة
+        </p>
+      </div>
+
+      <div class="lp-hero__stat">
+        <span class="lp-hero__stat-value">{{ count() }}</span>
+        <span class="lp-hero__stat-label">مغسلة مسجّلة</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Toolbar ── -->
+  <div class="lp-toolbar">
+    <div class="lp-search">
+      <i class="fa-solid fa-magnifying-glass lp-search__icon"></i>
+      <input
+        type="text"
+        class="lp-search__input"
+        placeholder="ابحث بالاسم أو رقم الهاتف..."
+        [ngModel]="searchTerm()"
+        (ngModelChange)="onSearchInput($event)"
+      />
+      @if (searchTerm()) {
+        <button type="button" class="lp-search__clear" (click)="clearSearch()" aria-label="مسح البحث">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Content ── -->
+  <div class="lp-panel">
+    @if (isLoading()) {
+      <div class="lp-table-wrap">
+        <table class="lp-table">
+          <thead>
+            <tr>
+              <th>المغسلة</th>
+              <th>رقم الهاتف</th>
+              <th>المدينة</th>
+              <th>الحالة</th>
+              <th>تاريخ التسجيل</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <tr class="lp-row-skel">
+                <td colspan="6"><div class="lp-skel-bar"></div></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (laundries().length === 0) {
+      <div class="lp-empty">
+        <div class="lp-empty__icon">
+          <i class="fa-solid fa-store-slash"></i>
+        </div>
+        <div class="lp-empty__title">
+          {{ searchTerm() ? 'لا توجد نتائج مطابقة' : 'لا توجد مغاسل مسجّلة بعد' }}
+        </div>
+        <div class="lp-empty__subtitle">
+          {{ searchTerm() ? 'جرّب اسمًا أو رقم هاتف آخر' : 'ستظهر المغاسل هنا فور تسجيلها عبر التطبيق' }}
+        </div>
+      </div>
+    } @else {
+      <div class="lp-table-wrap">
+        <table class="lp-table">
+          <thead>
+            <tr>
+              <th>المغسلة</th>
+              <th>رقم الهاتف</th>
+              <th>المدينة</th>
+              <th>الحالة</th>
+              <th>تاريخ التسجيل</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (laundry of laundries(); track laundry.id) {
+              <tr class="lp-row" [class.lp-row--banned]="laundry.isBanned">
+                <td>
+                  <div class="lp-laundry">
+                    <div class="lp-laundry__avatar">
+                      <i class="fa-solid fa-shirt"></i>
+                    </div>
+                    <div class="lp-laundry__name">{{ laundry.name }}</div>
+                  </div>
+                </td>
+                <td>
+                  <span class="lp-phone" dir="ltr">{{ laundry.phoneNumber }}</span>
+                  @if (laundry.phoneNumberConfirmed) {
+                    <i class="fa-solid fa-circle-check lp-verified" title="رقم موثّق"></i>
+                  }
+                </td>
+                <td>{{ laundry.cityName }}</td>
+                <td>
+                  @if (laundry.isBanned) {
+                    <span class="lp-status lp-status--banned">
+                      <i class="fa-solid fa-ban"></i>
+                      محظورة
+                    </span>
+                  } @else {
+                    <span class="lp-status lp-status--active">
+                      <i class="fa-solid fa-circle-check"></i>
+                      نشطة
+                    </span>
+                  }
+                </td>
+                <td class="lp-date">{{ formatDate(laundry.createdAt) }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="lp-ban-btn"
+                    [class.lp-ban-btn--unban]="laundry.isBanned"
+                    [disabled]="isPending(laundry)"
+                    (click)="onToggleBan(laundry)"
+                  >
+                    @if (isPending(laundry)) {
+                      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    } @else if (laundry.isBanned) {
+                      <i class="fa-solid fa-lock-open"></i>
+                      <span>إلغاء الحظر</span>
+                    } @else {
+                      <i class="fa-solid fa-ban"></i>
+                      <span>حظر</span>
+                    }
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="lp-pagination">
+        <div class="lp-pagination__info">
+          عرض {{ rangeStart() }}–{{ rangeEnd() }} من {{ count() }}
+        </div>
+        <div class="lp-pagination__controls">
+          <button type="button" class="lp-page-btn" [disabled]="pageIndex() <= 1" (click)="onPageChange(pageIndex() - 1)">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          <span class="lp-page-current">{{ pageIndex() }} / {{ totalPages() || 1 }}</span>
+          <button type="button" class="lp-page-btn" [disabled]="pageIndex() >= totalPages()" (click)="onPageChange(pageIndex() + 1)">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

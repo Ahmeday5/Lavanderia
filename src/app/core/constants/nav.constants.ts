@@ -16,9 +16,18 @@ export const NAV_SECTIONS: MenuSection[] = [
     ],
   },
   {
+    label: 'المستخدمون والشركاء',
+    items: [
+      { id: 'laundries', label: 'المغاسل', route: '/laundries', icon: 'store' },
+      { id: 'customers', label: 'العملاء', route: '/customers', icon: 'user-heart' },
+    ],
+  },
+  {
     label: 'الإدارة',
     items: [
-      { id: 'users', label: 'المستخدمون', route: '/users', icon: 'users', permissions: ['Users.Manage'] },
+      { id: 'cities', label: 'المدن', route: '/cities', icon: 'map-pin' },
+      { id: 'services', label: 'الخدمات', route: '/services', icon: 'washing-machine' },
+      { id: 'app-users', label: 'المستخدمون', route: '/app-users', icon: 'user-shield' },
       { id: 'settings', label: 'الإعدادات', route: '/settings', icon: 'settings', roles: ['Admin'] },
     ],
   },

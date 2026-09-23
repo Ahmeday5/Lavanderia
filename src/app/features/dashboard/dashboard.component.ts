@@ -1,34 +1,57 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal,
+} from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { AuthService } from '../../core/auth/services/auth.service';
-import { StatCardComponent } from '../../shared/components/stat-card/stat-card.component';
+import { CitiesService } from '../cities/services/cities.service';
+import { ServicesService } from '../services/services/services.service';
+import { AppUsersService } from '../app-users/services/app-users.service';
 
-/** Placeholder landing page — replace with your real dashboard. */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatCardComponent],
-  template: `
-    <div class="pgh">
-      <div>
-        <div class="pgt">لوحة التحكم</div>
-        <div class="pgs">أهلاً بعودتك، {{ auth.currentUser()?.name }}</div>
-      </div>
-    </div>
-
-    <div class="row g-3">
-      <div class="col-md-4">
-        <app-stat-card label="مؤشر تجريبي" value="1,024" sub="+12% هذا الشهر" />
-      </div>
-      <div class="col-md-4">
-        <app-stat-card label="مؤشر آخر" value="87" />
-      </div>
-      <div class="col-md-4">
-        <app-stat-card label="دورك" [value]="auth.currentUser()?.role ?? '—'" />
-      </div>
-    </div>
-  `,
+  imports: [RouterLink],
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.scss',
 })
 export class DashboardComponent {
   protected readonly auth = inject(AuthService);
+  private readonly citiesService = inject(CitiesService);
+  private readonly servicesService = inject(ServicesService);
+  private readonly appUsersService = inject(AppUsersService);
+
+  protected readonly isLoading = signal(true);
+  protected readonly citiesCount = signal(0);
+  protected readonly servicesCount = signal(0);
+  protected readonly usersCount = signal(0);
+
+  protected readonly greeting = this.resolveGreeting();
+
+  constructor() {
+    forkJoin({
+      cities: this.citiesService.list(),
+      services: this.servicesService.list(),
+      users: this.appUsersService.list(),
+    }).subscribe({
+      next: ({ cities, services, users }) => {
+        this.citiesCount.set(cities.length);
+        this.servicesCount.set(services.length);
+        this.usersCount.set(users.length);
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false),
+    });
+  }
+
+  private resolveGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'صباح الخير';
+    if (hour < 17) return 'مساء الخير';
+    return 'مساء الخير';
+  }
 }

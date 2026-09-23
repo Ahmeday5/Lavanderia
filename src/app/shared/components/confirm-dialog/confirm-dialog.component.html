@@ -1,17 +1,23 @@
 <app-modal
   [open]="isOpen()"
-  [title]="config().title"
+  title=""
   size="sm"
-  [titleColorClass]="titleClass()"
+  [showHeader]="false"
   (closed)="cancel()"
 >
-  <p class="cd-message">{{ config().message }}</p>
+  <div class="cd">
+    <div class="cd-icon" [class]="iconClass()">
+      <i class="fa-solid" [class]="iconGlyph()"></i>
+    </div>
+    <div class="cd-title">{{ config().title }}</div>
+    <p class="cd-message">{{ config().message }}</p>
+  </div>
 
   <ng-container modal-footer>
-    <button type="button" class="btn" (click)="cancel()">
+    <button type="button" class="cd-btn cd-btn-ghost" (click)="cancel()">
       {{ config().cancelText }}
     </button>
-    <button type="button" [class]="confirmBtnClass()" (click)="confirm()">
+    <button type="button" class="cd-btn" [class]="confirmBtnClass()" (click)="confirm()">
       {{ config().confirmText }}
     </button>
   </ng-container>

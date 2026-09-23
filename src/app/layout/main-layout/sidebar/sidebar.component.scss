@@ -1,58 +1,40 @@
 /* ════════════════════════════════
-   SIDEBAR — desktop + mobile
+   SIDEBAR — dark brand shell, desktop + mobile
    ════════════════════════════════ */
 
 /* ── Sidebar shell ── */
 .sidebar {
-  --sb-width: 220px;
-  --sb-collapsed-width: 58px;
-  --sb-transition: 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+  --sb-width: 232px;
+  --sb-collapsed-width: 64px;
+  --sb-transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 
+  position: relative;
   width: var(--sb-width);
   height: 100%;
-  background: var(--bg2);
-  border-inline-end: 1px solid var(--brd);
+  background: var(--brand-gradient);
+  color: rgba(255, 255, 255, 0.92);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   transition: width var(--sb-transition);
-
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-  &:hover {
-    scrollbar-color: var(--brd2) transparent;
-  }
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: transparent;
-    border-radius: 10px;
-    transition: background 0.2s;
-  }
-  &:hover::-webkit-scrollbar-thumb {
-    background: var(--brd2);
-  }
+  isolation: isolate;
+  box-shadow: 4px 0 24px -8px rgba(5, 7, 13, 0.35);
 
   /* ── Desktop collapsed ── */
   &.collapsed {
     width: var(--sb-collapsed-width);
 
-    .sb-sec {
-      text-align: center;
-    }
+    .sb-sec__label,
     .sbi-label,
-    .sb-toggle-label {
+    .sb-toggle-label,
+    .sb-footer {
       display: none;
     }
     .sbi {
       justify-content: center;
       padding: 10px 0;
+      margin: 3px 10px;
     }
     .sb-toggle {
       justify-content: center;
@@ -65,77 +47,144 @@
     }
   }
 
-  /* ── Mobile: hidden by default, slides in as drawer ── */
+  /* ── Mobile: hidden by default, slides in as drawer ──
+     Positioned via `inset-inline-start: -100%` (logical property, RTL-aware)
+     rather than a `transform: translateX()` sign-flip — transforms always
+     move along the physical X axis regardless of `dir`, so a translateX
+     drawer that's correctly off-screen in LTR ends up on-screen in RTL. */
   @media (max-width: 991px) {
     position: fixed;
-    top: 50px;
-    inset-inline-start: 0;
+    top: 0;
+    inset-inline-start: -100%;
     bottom: 0;
-    width: 240px !important;
+    width: 260px !important;
     z-index: 1000;
-    border-inline-end: none;
     box-shadow: none;
-    transform: translateX(-102%);
     transition:
-      transform var(--sb-transition),
+      inset-inline-start var(--sb-transition),
       box-shadow var(--sb-transition);
 
-    .sb-sec {
-      opacity: 1 !important;
-      pointer-events: auto !important;
-    }
+    .sb-sec__label,
     .sbi-label {
-      opacity: 1 !important;
-      width: auto !important;
+      display: inline !important;
     }
     .sbi {
       justify-content: flex-start !important;
-      padding: 9px 13px !important;
+      padding: 10px 13px !important;
     }
     .sb-toggle {
       display: none;
     }
 
     &.open {
-      transform: translateX(0);
-      box-shadow: 6px 0 32px rgba(0, 0, 0, 0.16);
+      inset-inline-start: 0;
+      box-shadow: 10px 0 40px rgba(0, 0, 0, 0.35);
     }
   }
+}
+
+/* ── Ambient background effects ── */
+.sb-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--brand-gradient-radial);
+  animation: sb-glow-drift 16s ease-in-out infinite alternate;
+}
+
+.sb-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.3;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(ellipse at 30% 0%, #000 0%, transparent 75%);
+}
+
+/* ── Brand mark ── */
+.sb-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 20px 16px 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sb-brand__mark {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(6px);
+  color: var(--brand-white);
+  font-size: 15px;
+  box-shadow:
+    0 8px 20px -8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.sb-brand__name {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--brand-white);
+  letter-spacing: -0.01em;
+  transition: opacity 0.16s, width 0.22s;
+}
+
+.collapsed .sb-brand__name {
+  display: none;
 }
 
 /* ── Collapse toggle button (desktop only) ── */
 .sb-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 13px;
-  margin: 6px 8px 2px;
-  border: 1px solid var(--brd);
-  border-radius: var(--r);
-  background: transparent;
-  color: var(--txt3);
-  font-family: inherit;
+  gap: 9px;
+  padding: 9px 14px;
+  margin: 2px 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--font-base);
   font-size: 11px;
+  font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
+  flex-shrink: 0;
   transition:
-    background 0.12s,
-    color 0.12s;
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 
   &:hover {
-    background: var(--bg3);
-    color: var(--txt2);
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.95);
+    border-color: rgba(255, 255, 255, 0.24);
   }
 }
 
-.sb-toggle-icon {
+.sb-toggle-icon-wrap {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+}
+
+.sb-toggle-icon {
   transition: transform var(--sb-transition);
 
-  // Base glyph points toward the collapse edge in LTR (sidebar on the left).
-  // In RTL the sidebar renders on the right (flex row auto-mirrors), so the
-  // "point toward the edge" direction is reversed — mirror the whole icon.
   [dir="rtl"] & {
     transform: scaleX(-1);
   }
@@ -157,55 +206,139 @@
     width 0.22s;
 }
 
+/* ── Scrollable nav area ── */
+.sb-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-bottom: 8px;
+
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  &:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  }
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 10px;
+    transition: background 0.2s;
+  }
+  &:hover::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+  }
+}
+
 /* ── Section label ── */
 .sb-sec {
-  padding: 10px 14px 2px;
-  font-size: 9px;
-  color: var(--txt3);
-  font-weight: 700;
-  letter-spacing: 0.7px;
-  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 16px 8px;
   white-space: nowrap;
   overflow: hidden;
   transition: opacity 0.18s;
 }
 
-/* ── Nav item ── */
-.sbi {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 9px 13px;
-  font-size: 12px;
-  cursor: pointer;
-  color: var(--txt2);
-  border-inline-start: 3px solid transparent;
-  transition:
-    background 0.12s,
-    color 0.12s,
-    padding 0.24s;
-  text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
+.sb-sec__line {
+  width: 10px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
 
-  &:hover {
-    background: var(--bg3);
-    color: var(--txt);
-  }
+.sb-sec__label {
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
 
-  &.on {
-    background: var(--bl-l);
-    color: var(--bl);
-    border-inline-start-color: var(--bl);
-    font-weight: 600;
+.collapsed .sb-sec {
+  justify-content: center;
+  padding: 14px 0 6px;
+
+  .sb-sec__line {
+    width: 18px;
   }
 }
 
-.sbi-icon {
+/* ── Nav item ── */
+.sbi {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 13px;
+  margin: 3px 12px;
+  border-radius: 11px;
+  font-size: 12.5px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.68);
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  animation: sbi-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--brand-white);
+
+    .sbi-icon-wrap {
+      color: var(--brand-white);
+      transform: scale(1.08);
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &.on {
+    background: rgba(255, 255, 255, 0.16);
+    color: var(--brand-white);
+    font-weight: 700;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      0 6px 18px -8px rgba(0, 0, 0, 0.35);
+
+    .sbi-icon-wrap {
+      color: var(--brand-white);
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    }
+
+    .sbi-dot {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
+.sbi-icon-wrap {
   flex-shrink: 0;
-  width: 16px;
-  text-align: center;
-  font-size: 14px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.18s ease, background 0.18s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .sbi-label {
@@ -214,4 +347,86 @@
   transition:
     opacity 0.16s,
     width 0.22s;
+}
+
+.sbi-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand-white);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+}
+
+.collapsed .sbi-dot {
+  display: none;
+}
+
+/* ── Footer status badge ── */
+.sb-footer {
+  flex-shrink: 0;
+  padding: 12px 16px 16px;
+}
+
+.sb-footer__badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.65);
+  white-space: nowrap;
+  overflow: hidden;
+
+  i {
+    color: #4ade80;
+    font-size: 10px;
+    flex-shrink: 0;
+    animation: sb-pulse 2s ease-in-out infinite;
+  }
+}
+
+/* ── Animations ── */
+@keyframes sbi-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sb-glow-drift {
+  from {
+    opacity: 0.55;
+    transform: translate(0, 0);
+  }
+  to {
+    opacity: 0.9;
+    transform: translate(-16px, 14px);
+  }
+}
+
+@keyframes sb-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-glow,
+  .sbi {
+    animation: none !important;
+  }
 }

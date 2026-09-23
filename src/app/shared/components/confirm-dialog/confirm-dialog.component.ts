@@ -3,9 +3,9 @@ import { DialogService } from '../../../core/services/dialog.service';
 import { ModalComponent } from '../modal/modal.component';
 
 const TYPE_CLASSES = {
-  danger: { title: 'cd-title-danger', confirm: 'btn btn-re' },
-  warning: { title: 'cd-title-warning', confirm: 'btn btn-am' },
-  info: { title: 'cd-title-info', confirm: 'btn btn-bl' },
+  danger: { icon: 'cd-icon-danger', confirm: 'cd-btn-danger', glyph: 'fa-trash-can' },
+  warning: { icon: 'cd-icon-warning', confirm: 'cd-btn-warning', glyph: 'fa-triangle-exclamation' },
+  info: { icon: 'cd-icon-info', confirm: 'cd-btn-info', glyph: 'fa-circle-info' },
 } as const;
 
 /** Mount once near the app root (e.g. in the main layout) alongside `DialogService`. */
@@ -24,8 +24,11 @@ export class ConfirmDialogComponent {
   protected readonly isOpen = computed(() => this.state().isOpen);
   protected readonly config = computed(() => this.state().config);
 
-  protected readonly titleClass = computed(
-    () => TYPE_CLASSES[this.config().type ?? 'danger'].title,
+  protected readonly iconClass = computed(
+    () => TYPE_CLASSES[this.config().type ?? 'danger'].icon,
+  );
+  protected readonly iconGlyph = computed(
+    () => TYPE_CLASSES[this.config().type ?? 'danger'].glyph,
   );
   protected readonly confirmBtnClass = computed(
     () => TYPE_CLASSES[this.config().type ?? 'danger'].confirm,

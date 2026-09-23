@@ -1,0 +1,55 @@
+<app-modal
+  [open]="open()"
+  title=""
+  size="sm"
+  [showHeader]="false"
+  (closed)="onClose()"
+>
+  <div class="cfm">
+    <button type="button" class="cfm__close" (click)="onClose()" [disabled]="isSubmitting()" aria-label="إغلاق">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+
+    <div class="cfm__icon">
+      <i class="fa-solid" [class.fa-map-pin]="!isEditMode()" [class.fa-pen]="isEditMode()"></i>
+    </div>
+    <div class="cfm__title">{{ isEditMode() ? 'تعديل المدينة' : 'إضافة مدينة جديدة' }}</div>
+    <div class="cfm__subtitle">
+      {{ isEditMode() ? 'عدّل اسم المدينة وسيتم تحديثه في كل مكان' : 'أدخل اسم المدينة الجديدة لإضافتها لقائمة التغطية' }}
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="cfm__form">
+      @if (serverError(); as error) {
+        <div class="alert alert-danger">{{ error }}</div>
+      }
+
+      <div class="cfm__field">
+        <label class="form-label" for="city-name">اسم المدينة</label>
+        <div class="cfm__input-wrap">
+          <i class="fa-solid fa-location-dot cfm__input-icon"></i>
+          <input
+            id="city-name"
+            type="text"
+            class="form-control"
+            formControlName="name"
+            placeholder="مثال: طرابلس"
+            autocomplete="off"
+          />
+        </div>
+        <app-form-error [control]="form.controls.name" label="اسم المدينة" />
+      </div>
+    </form>
+  </div>
+
+  <ng-container modal-footer>
+    <button type="button" class="cfm-btn cfm-btn--ghost" (click)="onClose()" [disabled]="isSubmitting()">
+      إلغاء
+    </button>
+    <button type="button" class="cfm-btn cfm-btn--brand" (click)="onSubmit()" [disabled]="isSubmitting()">
+      @if (isSubmitting()) {
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      }
+      {{ isEditMode() ? 'حفظ التعديلات' : 'إضافة المدينة' }}
+    </button>
+  </ng-container>
+</app-modal>

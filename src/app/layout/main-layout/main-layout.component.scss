@@ -1,6 +1,20 @@
+/* Host element (`app-main-layout`) is a flex child of `app-root` — without
+   an explicit grow/width it defaults to `display:block; flex:0 1 auto` and
+   shrinks to its content's intrinsic width instead of filling the row,
+   leaving dead space beside it. */
+:host {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
 /* ── MAIN LAYOUT ── */
 .app-layout {
   display: flex;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
   height: 100vh;
   height: 100dvh;
   height: var(--app-height, 100dvh);

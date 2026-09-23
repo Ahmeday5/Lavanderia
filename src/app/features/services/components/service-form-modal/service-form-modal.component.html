@@ -1,0 +1,84 @@
+<app-modal
+  [open]="open()"
+  title=""
+  size="sm"
+  [showHeader]="false"
+  (closed)="onClose()"
+>
+  <div class="sfm">
+    <button type="button" class="sfm__close" (click)="onClose()" [disabled]="isSubmitting()" aria-label="إغلاق">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+
+    <div class="sfm__icon">
+      <i class="fa-solid" [class.fa-shirt]="!isEditMode()" [class.fa-pen]="isEditMode()"></i>
+    </div>
+    <div class="sfm__title">{{ isEditMode() ? 'تعديل الخدمة' : 'إضافة خدمة جديدة' }}</div>
+    <div class="sfm__subtitle">
+      {{ isEditMode() ? 'عدّل بيانات الخدمة وأيقونتها' : 'أضف خدمة جديدة لعرضها في تطبيق العملاء' }}
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="sfm__form">
+      @if (serverError(); as error) {
+        <div class="alert alert-danger">{{ error }}</div>
+      }
+
+      <div class="sfm__field">
+        <label class="form-label" for="service-name">اسم الخدمة</label>
+        <div class="sfm__input-wrap">
+          <i class="fa-solid fa-tag sfm__input-icon"></i>
+          <input
+            id="service-name"
+            type="text"
+            class="form-control"
+            formControlName="name"
+            placeholder="مثال: غسيل الملابس"
+            autocomplete="off"
+          />
+        </div>
+        <app-form-error [control]="form.controls.name" label="اسم الخدمة" />
+      </div>
+
+      <div class="sfm__field">
+        <label class="form-label" for="service-icon">الأيقونة</label>
+        <div class="sfm__icon-row">
+          <div class="sfm__icon-preview">{{ form.controls.icon.value || '—' }}</div>
+          <input
+            id="service-icon"
+            type="text"
+            class="form-control"
+            formControlName="icon"
+            placeholder="اختر رمزًا أو الصق SVG"
+            autocomplete="off"
+          />
+        </div>
+        <app-form-error [control]="form.controls.icon" label="الأيقونة" />
+      </div>
+
+      <div class="sfm__suggestions">
+        @for (icon of iconSuggestions; track icon) {
+          <button
+            type="button"
+            class="sfm__chip"
+            [class.active]="form.controls.icon.value === icon"
+            (click)="pickIcon(icon)"
+          >
+            {{ icon }}
+          </button>
+        }
+      </div>
+    </form>
+  </div>
+
+  <ng-container modal-footer>
+    <button type="button" class="sfm-btn sfm-btn--ghost" (click)="onClose()" [disabled]="isSubmitting()">
+      إلغاء
+    </button>
+    <button type="button" class="sfm-btn sfm-btn--brand" (click)="onSubmit()" [disabled]="isSubmitting()">
+      @if (isSubmitting()) {
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      }
+      {{ isEditMode() ? 'حفظ التعديلات' : 'إضافة الخدمة' }}
+    </button>
+  </ng-container>
+</app-modal>

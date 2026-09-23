@@ -40,12 +40,31 @@ export const routes: Routes = [
             (m) => m.DashboardComponent,
           ),
       },
-      // Add feature routes here, e.g.:
-      // {
-      //   path: 'users',
-      //   canActivate: [permissionGuard('Users.Manage')],
-      //   loadChildren: () => import('./features/users/users.routes').then((m) => m.usersRoutes),
-      // },
+      {
+        path: 'cities',
+        loadChildren: () =>
+          import('./features/cities/cities.routes').then((m) => m.citiesRoutes),
+      },
+      {
+        path: 'services',
+        loadChildren: () =>
+          import('./features/services/services.routes').then((m) => m.servicesRoutes),
+      },
+      {
+        path: 'app-users',
+        loadChildren: () =>
+          import('./features/app-users/app-users.routes').then((m) => m.appUsersRoutes),
+      },
+      {
+        path: 'laundries',
+        loadChildren: () =>
+          import('./features/laundries/laundries.routes').then((m) => m.laundriesRoutes),
+      },
+      {
+        path: 'customers',
+        loadChildren: () =>
+          import('./features/customers/customers.routes').then((m) => m.customersRoutes),
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

@@ -1,10 +1,113 @@
-.cd-message {
-  font-size: 13px;
-  color: var(--txt2);
-  line-height: 1.7;
-  margin: 0;
+.cd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 4px;
 }
 
-.cd-title-danger  { color: var(--re); }
-.cd-title-warning { color: var(--am); }
-.cd-title-info    { color: var(--bl); }
+.cd-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 19px;
+  margin-bottom: 14px;
+  animation: cd-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  &.cd-icon-danger {
+    background: var(--re-l);
+    color: var(--re);
+  }
+  &.cd-icon-warning {
+    background: var(--am-l);
+    color: var(--am);
+  }
+  &.cd-icon-info {
+    background: var(--bl-l);
+    color: var(--bl);
+  }
+}
+
+.cd-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--txt);
+}
+
+.cd-message {
+  font-size: 12px;
+  color: var(--txt2);
+  line-height: 1.7;
+  max-width: 320px;
+  margin: 6px 0 0;
+}
+
+@keyframes cd-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Footer buttons ── */
+.cd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 22px;
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font-base);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cd-btn-ghost {
+  border: 1px solid var(--brd2);
+  background: var(--bg2);
+  color: var(--txt2);
+
+  &:hover {
+    background: var(--bg3);
+    color: var(--txt);
+  }
+}
+
+.cd-btn-danger {
+  background: var(--re);
+  color: #fff;
+  box-shadow: 0 10px 22px -10px rgba(163, 45, 45, 0.55);
+  &:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+}
+
+.cd-btn-warning {
+  background: var(--am);
+  color: #fff;
+  box-shadow: 0 10px 22px -10px rgba(133, 79, 11, 0.55);
+  &:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+}
+
+.cd-btn-info {
+  background: var(--brand-gradient);
+  color: var(--brand-white);
+  box-shadow: 0 10px 22px -10px rgba(10, 42, 74, 0.55);
+  &:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+}

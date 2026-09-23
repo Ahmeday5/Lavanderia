@@ -20,6 +20,11 @@ export class TopbarComponent {
 
   protected readonly appName = environment.appName;
   protected readonly currentUser = this.authService.currentUser;
+  protected readonly today = new Date().toLocaleDateString('ar-LY', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
 
   logout(): void {
     this.dialog

@@ -1,0 +1,114 @@
+<div class="aup">
+  <!-- ── Hero header ── -->
+  <header class="aup-hero">
+    <div class="aup-hero__glow" aria-hidden="true"></div>
+    <div class="aup-hero__content">
+      <div class="aup-hero__text">
+        <span class="aup-hero__eyebrow">
+          <i class="fa-solid fa-user-shield"></i>
+          إدارة الوصول
+        </span>
+        <h1 class="aup-hero__title">المستخدمون</h1>
+        <p class="aup-hero__subtitle">
+          إدارة المستخدمين الذين لديهم صلاحية الوصول إلى لوحة التحكم
+        </p>
+      </div>
+
+      <div class="aup-hero__stat">
+        <span class="aup-hero__stat-value">{{ users().length }}</span>
+        <span class="aup-hero__stat-label">مستخدم</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Toolbar ── -->
+  <div class="aup-toolbar">
+    <div class="aup-search">
+      <i class="fa-solid fa-magnifying-glass aup-search__icon"></i>
+      <input
+        type="text"
+        class="aup-search__input"
+        placeholder="ابحث بالبريد الإلكتروني..."
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+      />
+      @if (searchTerm()) {
+        <button type="button" class="aup-search__clear" (click)="searchTerm.set('')" aria-label="مسح البحث">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      }
+    </div>
+
+    <button type="button" class="aup-add-btn" (click)="openCreateModal()">
+      <i class="fa-solid fa-user-plus"></i>
+      <span>إضافة مستخدم</span>
+    </button>
+  </div>
+
+  <!-- ── Content ── -->
+  @if (isLoading()) {
+    <div class="aup-grid">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="aup-skeleton"></div>
+      }
+    </div>
+  } @else if (filteredUsers().length === 0) {
+    <div class="aup-empty">
+      <div class="aup-empty__icon">
+        <i class="fa-solid fa-user-shield"></i>
+      </div>
+      <div class="aup-empty__title">
+        {{ searchTerm() ? 'لا توجد نتائج مطابقة' : 'لا يوجد مستخدمون بعد' }}
+      </div>
+      <div class="aup-empty__subtitle">
+        {{ searchTerm() ? 'جرّب مصطلح بحث آخر' : 'أضف أول مستخدم للتحكم في لوحة التحكم' }}
+      </div>
+      @if (!searchTerm()) {
+        <button type="button" class="aup-add-btn" (click)="openCreateModal()">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>إضافة مستخدم</span>
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="aup-grid">
+      @for (user of filteredUsers(); track user.id; let i = $index) {
+        <article class="aup-card" [style.animation-delay.ms]="i * 35">
+          <div class="aup-card__avatar">{{ initials(user.email) }}</div>
+
+          <div class="aup-card__body">
+            <div class="aup-card__email">
+              <span class="aup-card__email-text" [title]="user.email">{{ user.email }}</span>
+              @if (isSelf(user)) {
+                <span class="aup-card__you">أنت</span>
+              }
+            </div>
+            <span class="aup-card__role">{{ user.role }}</span>
+          </div>
+
+          <div class="aup-card__actions">
+            <button type="button" class="aup-icon-btn" (click)="openEditModal(user)" title="تعديل">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button
+              type="button"
+              class="aup-icon-btn aup-icon-btn--danger"
+              [disabled]="isSelf(user)"
+              [title]="isSelf(user) ? 'لا يمكنك حذف حسابك الخاص' : 'حذف'"
+              (click)="onDelete(user)"
+            >
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</div>
+
+<app-app-user-form-modal
+  [open]="isModalOpen()"
+  [user]="editingUser()"
+  (closed)="closeModal()"
+  (saved)="onSaved($event)"
+/>

@@ -1,0 +1,66 @@
+<app-modal
+  [open]="open()"
+  title=""
+  size="sm"
+  [showHeader]="false"
+  (closed)="onClose()"
+>
+  <div class="sim">
+    <button type="button" class="sim__close" (click)="onClose()" [disabled]="isSubmitting()" aria-label="إغلاق">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+
+    <div class="sim__icon">
+      <i class="fa-solid" [class.fa-plus]="!isEditMode()" [class.fa-pen]="isEditMode()"></i>
+    </div>
+    <div class="sim__title">{{ isEditMode() ? 'تعديل الصنف' : 'إضافة صنف جديد' }}</div>
+    <div class="sim__subtitle">
+      {{ isEditMode() ? 'عدّل اسم الصنف أو انقله إلى خدمة أخرى' : 'أضف صنفًا جديدًا واربطه بإحدى الخدمات' }}
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="sim__form">
+      @if (serverError(); as error) {
+        <div class="alert alert-danger">{{ error }}</div>
+      }
+
+      <div class="sim__field">
+        <label class="form-label" for="item-name">اسم الصنف</label>
+        <div class="sim__input-wrap">
+          <i class="fa-solid fa-tag sim__input-icon"></i>
+          <input
+            id="item-name"
+            type="text"
+            class="form-control"
+            formControlName="name"
+            placeholder="مثال: قميص"
+            autocomplete="off"
+          />
+        </div>
+        <app-form-error [control]="form.controls.name" label="اسم الصنف" />
+      </div>
+
+      <div class="sim__field">
+        <label class="form-label">الخدمة</label>
+        <app-searchable-select
+          formControlName="serviceId"
+          [options]="serviceOptions()"
+          placeholder="اختر الخدمة"
+          searchPlaceholder="بحث عن خدمة..."
+        />
+        <app-form-error [control]="form.controls.serviceId" label="الخدمة" />
+      </div>
+    </form>
+  </div>
+
+  <ng-container modal-footer>
+    <button type="button" class="sim-btn sim-btn--ghost" (click)="onClose()" [disabled]="isSubmitting()">
+      إلغاء
+    </button>
+    <button type="button" class="sim-btn sim-btn--brand" (click)="onSubmit()" [disabled]="isSubmitting()">
+      @if (isSubmitting()) {
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      }
+      {{ isEditMode() ? 'حفظ التعديلات' : 'إضافة الصنف' }}
+    </button>
+  </ng-container>
+</app-modal>

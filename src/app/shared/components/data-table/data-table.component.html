@@ -34,7 +34,9 @@
         }
         @if (hasActions()) {
         <td style="text-align: center">
-          <ng-content select="[actions]" />
+          @if (actionsTemplate(); as tpl) {
+          <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row }" />
+          }
         </td>
         }
       </tr>

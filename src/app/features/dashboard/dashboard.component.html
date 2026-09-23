@@ -1,0 +1,115 @@
+<div class="dp">
+  <!-- ── Welcome hero ── -->
+  <header class="dp-hero">
+    <div class="dp-hero__glow" aria-hidden="true"></div>
+    <div class="dp-hero__grid" aria-hidden="true"></div>
+
+    <div class="dp-hero__content">
+      <div class="dp-hero__text">
+        <span class="dp-hero__eyebrow">
+          <i class="fa-solid fa-water"></i>
+          Lavanderia Dashboard
+        </span>
+        <h1 class="dp-hero__title">{{ greeting }}، {{ auth.currentUser()?.name }} 👋</h1>
+        <p class="dp-hero__subtitle">
+          إليك نظرة سريعة على أداء منصة الغسيل اليوم
+        </p>
+      </div>
+
+      <div class="dp-hero__badge">
+        <span class="dp-hero__badge-role">{{ auth.currentUser()?.role }}</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Stats ── -->
+  <div class="dp-stats">
+    <a class="dp-stat" routerLink="/cities">
+      <div class="dp-stat__icon dp-stat__icon--blue">
+        <i class="fa-solid fa-map-location-dot"></i>
+      </div>
+      <div class="dp-stat__body">
+        <div class="dp-stat__value">
+          @if (isLoading()) {
+            <span class="dp-skel"></span>
+          } @else {
+            {{ citiesCount() }}
+          }
+        </div>
+        <div class="dp-stat__label">مدينة مسجّلة</div>
+      </div>
+      <i class="fa-solid fa-arrow-left dp-stat__arrow"></i>
+    </a>
+
+    <a class="dp-stat" routerLink="/services">
+      <div class="dp-stat__icon dp-stat__icon--purple">
+        <i class="fa-solid fa-shirt"></i>
+      </div>
+      <div class="dp-stat__body">
+        <div class="dp-stat__value">
+          @if (isLoading()) {
+            <span class="dp-skel"></span>
+          } @else {
+            {{ servicesCount() }}
+          }
+        </div>
+        <div class="dp-stat__label">خدمة متاحة</div>
+      </div>
+      <i class="fa-solid fa-arrow-left dp-stat__arrow"></i>
+    </a>
+
+    <a class="dp-stat" routerLink="/app-users">
+      <div class="dp-stat__icon dp-stat__icon--teal">
+        <i class="fa-solid fa-user-shield"></i>
+      </div>
+      <div class="dp-stat__body">
+        <div class="dp-stat__value">
+          @if (isLoading()) {
+            <span class="dp-skel"></span>
+          } @else {
+            {{ usersCount() }}
+          }
+        </div>
+        <div class="dp-stat__label">مستخدم لوحة التحكم</div>
+      </div>
+      <i class="fa-solid fa-arrow-left dp-stat__arrow"></i>
+    </a>
+  </div>
+
+  <!-- ── Quick links ── -->
+  <div class="dp-section-title">الوصول السريع</div>
+  <div class="dp-quick-links">
+    <a class="dp-link" routerLink="/cities">
+      <div class="dp-link__icon">
+        <i class="fa-solid fa-map-pin"></i>
+      </div>
+      <div class="dp-link__body">
+        <div class="dp-link__title">إدارة المدن</div>
+        <div class="dp-link__subtitle">أضف أو عدّل المدن التي تغطيها الخدمة</div>
+      </div>
+      <i class="fa-solid fa-chevron-left dp-link__chevron"></i>
+    </a>
+
+    <a class="dp-link" routerLink="/services">
+      <div class="dp-link__icon">
+        <i class="fa-solid fa-shirt"></i>
+      </div>
+      <div class="dp-link__body">
+        <div class="dp-link__title">إدارة الخدمات</div>
+        <div class="dp-link__subtitle">تحكّم في الخدمات والأصناف الخاصة بكل خدمة</div>
+      </div>
+      <i class="fa-solid fa-chevron-left dp-link__chevron"></i>
+    </a>
+
+    <a class="dp-link" routerLink="/app-users">
+      <div class="dp-link__icon">
+        <i class="fa-solid fa-user-shield"></i>
+      </div>
+      <div class="dp-link__body">
+        <div class="dp-link__title">إدارة المستخدمين</div>
+        <div class="dp-link__subtitle">تحكّم في المستخدمين الذين يملكون صلاحية الوصول للوحة التحكم</div>
+      </div>
+      <i class="fa-solid fa-chevron-left dp-link__chevron"></i>
+    </a>
+  </div>
+</div>

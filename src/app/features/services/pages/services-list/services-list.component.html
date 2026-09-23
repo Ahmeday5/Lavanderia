@@ -1,0 +1,178 @@
+<div class="sp">
+  <!-- ── Hero header ── -->
+  <header class="sp-hero">
+    <div class="sp-hero__glow" aria-hidden="true"></div>
+    <div class="sp-hero__content">
+      <div class="sp-hero__text">
+        <span class="sp-hero__eyebrow">
+          <i class="fa-solid fa-shirt"></i>
+          إدارة الخدمات
+        </span>
+        <h1 class="sp-hero__title">الخدمات</h1>
+        <p class="sp-hero__subtitle">
+          إدارة خدمات الغسيل والأصناف الخاصة بكل خدمة في مكان واحد
+        </p>
+      </div>
+
+      <div class="sp-hero__stats">
+        <div class="sp-hero__stat">
+          <span class="sp-hero__stat-value">{{ services().length }}</span>
+          <span class="sp-hero__stat-label">خدمة</span>
+        </div>
+        <div class="sp-hero__stat-divider"></div>
+        <div class="sp-hero__stat">
+          <span class="sp-hero__stat-value">{{ totalItemsCount() }}</span>
+          <span class="sp-hero__stat-label">صنف</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Toolbar ── -->
+  <div class="sp-toolbar">
+    <div class="sp-search">
+      <i class="fa-solid fa-magnifying-glass sp-search__icon"></i>
+      <input
+        type="text"
+        class="sp-search__input"
+        placeholder="ابحث عن خدمة..."
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+      />
+      @if (searchTerm()) {
+        <button type="button" class="sp-search__clear" (click)="searchTerm.set('')" aria-label="مسح البحث">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      }
+    </div>
+
+    <button type="button" class="sp-add-btn" (click)="openCreateServiceModal()">
+      <i class="fa-solid fa-plus"></i>
+      <span>إضافة خدمة</span>
+    </button>
+  </div>
+
+  <!-- ── Content ── -->
+  @if (isLoading()) {
+    <div class="sp-list">
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <div class="sp-skeleton"></div>
+      }
+    </div>
+  } @else if (filteredServices().length === 0) {
+    <div class="sp-empty">
+      <div class="sp-empty__icon">
+        <i class="fa-solid fa-shirt"></i>
+      </div>
+      <div class="sp-empty__title">
+        {{ searchTerm() ? 'لا توجد نتائج مطابقة' : 'لا توجد خدمات بعد' }}
+      </div>
+      <div class="sp-empty__subtitle">
+        {{ searchTerm() ? 'جرّب مصطلح بحث آخر' : 'ابدأ بإضافة أول خدمة لعرضها في تطبيق العملاء' }}
+      </div>
+      @if (!searchTerm()) {
+        <button type="button" class="sp-add-btn" (click)="openCreateServiceModal()">
+          <i class="fa-solid fa-plus"></i>
+          <span>إضافة خدمة</span>
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="sp-list">
+      @for (service of filteredServices(); track service.id; let i = $index) {
+        <article
+          class="sp-row"
+          [class.sp-row--open]="expandedServiceId() === service.id"
+          [style.animation-delay.ms]="i * 30"
+        >
+          <div class="sp-row__main" (click)="toggleExpand(service)">
+            <div class="sp-row__icon">{{ service.icon }}</div>
+
+            <div class="sp-row__body">
+              <div class="sp-row__name">{{ service.name }}</div>
+              <div class="sp-row__meta">{{ service.items.length }} صنف مرتبط</div>
+            </div>
+
+            <div class="sp-row__actions">
+              <button
+                type="button"
+                class="sp-icon-btn"
+                (click)="$event.stopPropagation(); openEditServiceModal(service)"
+                title="تعديل"
+              >
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button
+                type="button"
+                class="sp-icon-btn sp-icon-btn--danger"
+                (click)="$event.stopPropagation(); onDeleteService(service)"
+                title="حذف"
+              >
+                <i class="fa-solid fa-trash"></i>
+              </button>
+              <div class="sp-row__chevron">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </div>
+          </div>
+
+          @if (expandedServiceId() === service.id) {
+            <div class="sp-items">
+              @if (isItemsLoading()) {
+                <div class="sp-items__loading">
+                  <span class="sp-spinner"></span>
+                  جارٍ تحميل الأصناف...
+                </div>
+              } @else {
+                @if (service.items.length === 0) {
+                  <div class="sp-items__empty">
+                    <i class="fa-solid fa-inbox"></i>
+                    لا توجد أصناف لهذه الخدمة بعد
+                  </div>
+                } @else {
+                  <div class="sp-items__grid">
+                    @for (item of service.items; track item.id) {
+                      <div class="sp-item">
+                        <span class="sp-item__dot"></span>
+                        <span class="sp-item__name">{{ item.name }}</span>
+                        <div class="sp-item__actions">
+                          <button type="button" class="sp-item-btn" (click)="openEditItemModal(item)" title="تعديل">
+                            <i class="fa-solid fa-pen"></i>
+                          </button>
+                          <button type="button" class="sp-item-btn sp-item-btn--danger" (click)="onDeleteItem(item)" title="حذف">
+                            <i class="fa-solid fa-trash"></i>
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <button type="button" class="sp-add-item-btn" (click)="openCreateItemModal(service)">
+                  <i class="fa-solid fa-plus"></i>
+                  <span>إضافة صنف</span>
+                </button>
+              }
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+</div>
+
+<app-service-form-modal
+  [open]="isServiceModalOpen()"
+  [service]="editingService()"
+  (closed)="closeServiceModal()"
+  (saved)="onServiceSaved($event)"
+/>
+
+<app-service-item-form-modal
+  [open]="isItemModalOpen()"
+  [item]="editingItem()"
+  [services]="services()"
+  [defaultServiceId]="newItemServiceId()"
+  (closed)="closeItemModal()"
+  (saved)="onItemSaved($event)"
+/>

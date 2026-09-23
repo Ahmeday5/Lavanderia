@@ -1,0 +1,105 @@
+<div class="cp">
+  <!-- ── Hero header ── -->
+  <header class="cp-hero">
+    <div class="cp-hero__glow" aria-hidden="true"></div>
+    <div class="cp-hero__content">
+      <div class="cp-hero__text">
+        <span class="cp-hero__eyebrow">
+          <i class="fa-solid fa-map-location-dot"></i>
+          إدارة المناطق
+        </span>
+        <h1 class="cp-hero__title">المدن</h1>
+        <p class="cp-hero__subtitle">
+          تحكّم في المدن التي تغطيها خدمة الغسيل — أضف، عدّل أو احذف بسهولة تامة
+        </p>
+      </div>
+
+      <div class="cp-hero__stat">
+        <span class="cp-hero__stat-value">{{ cities().length }}</span>
+        <span class="cp-hero__stat-label">مدينة مسجّلة</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Toolbar ── -->
+  <div class="cp-toolbar">
+    <div class="cp-search">
+      <i class="fa-solid fa-magnifying-glass cp-search__icon"></i>
+      <input
+        type="text"
+        class="cp-search__input"
+        placeholder="ابحث عن مدينة..."
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+      />
+      @if (searchTerm()) {
+        <button type="button" class="cp-search__clear" (click)="searchTerm.set('')" aria-label="مسح البحث">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      }
+    </div>
+
+    <button type="button" class="cp-add-btn" (click)="openCreateModal()">
+      <i class="fa-solid fa-plus"></i>
+      <span>إضافة مدينة</span>
+    </button>
+  </div>
+
+  <!-- ── Content ── -->
+  @if (isLoading()) {
+    <div class="cp-grid">
+      @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+        <div class="cp-skeleton"></div>
+      }
+    </div>
+  } @else if (filteredCities().length === 0) {
+    <div class="cp-empty">
+      <div class="cp-empty__icon">
+        <i class="fa-solid fa-map-pin"></i>
+      </div>
+      <div class="cp-empty__title">
+        {{ searchTerm() ? 'لا توجد نتائج مطابقة' : 'لا توجد مدن بعد' }}
+      </div>
+      <div class="cp-empty__subtitle">
+        {{ searchTerm() ? 'جرّب مصطلح بحث آخر' : 'ابدأ بإضافة أول مدينة لتغطيتها بخدمة الغسيل' }}
+      </div>
+      @if (!searchTerm()) {
+        <button type="button" class="cp-add-btn" (click)="openCreateModal()">
+          <i class="fa-solid fa-plus"></i>
+          <span>إضافة مدينة</span>
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="cp-grid">
+      @for (city of filteredCities(); track city.id; let i = $index) {
+        <article class="cp-card" [style.animation-delay.ms]="i * 35">
+          <div class="cp-card__badge">
+            <i class="fa-solid fa-location-dot"></i>
+          </div>
+
+          <div class="cp-card__body">
+            <div class="cp-card__name">{{ city.name }}</div>
+            <div class="cp-card__id">#{{ city.id }}</div>
+          </div>
+
+          <div class="cp-card__actions">
+            <button type="button" class="cp-icon-btn" (click)="openEditModal(city)" title="تعديل">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button type="button" class="cp-icon-btn cp-icon-btn--danger" (click)="onDelete(city)" title="حذف">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</div>
+
+<app-city-form-modal
+  [open]="isModalOpen()"
+  [city]="editingCity()"
+  (closed)="closeModal()"
+  (saved)="onSaved($event)"
+/>
