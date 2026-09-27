@@ -1,0 +1,52 @@
+@if (display()) {
+  <div class="pa" [class.pa--stacked]="stacked()">
+    <span class="pa__number">
+      <span dir="ltr">{{ display() }}</span>
+      @if (verified() === true) {
+        <i class="fa-solid fa-circle-check pa__ok" title="رقم موثّق" aria-label="رقم موثّق"></i>
+      } @else if (verified() === false) {
+        <i class="fa-solid fa-circle-exclamation pa__warn" title="رقم غير موثّق" aria-label="رقم غير موثّق"></i>
+      }
+    </span>
+
+    <span class="pa__actions" role="group" aria-label="إجراءات رقم الهاتف">
+      <button
+        type="button"
+        class="pa__btn"
+        [class.pa__btn--done]="copied()"
+        (click)="copy()"
+        [title]="copied() ? 'تم النسخ' : 'نسخ الرقم'"
+        [attr.aria-label]="copied() ? 'تم نسخ الرقم' : 'نسخ الرقم'"
+      >
+        <i [class]="copied() ? 'fa-solid fa-check' : 'fa-regular fa-copy'" aria-hidden="true"></i>
+      </button>
+
+      <a class="pa__btn pa__btn--call" [attr.href]="tel()" title="اتصال" aria-label="اتصال بالرقم">
+        <i class="fa-solid fa-phone" aria-hidden="true"></i>
+      </a>
+
+      @if (whatsApp(); as wa) {
+        <a
+          class="pa__btn pa__btn--wa"
+          [href]="wa"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="مراسلة عبر واتساب"
+          aria-label="مراسلة عبر واتساب"
+        >
+          <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+        </a>
+      } @else {
+        <span
+          class="pa__btn pa__btn--disabled"
+          title="تعذّر تحديد رمز الدولة لهذا الرقم"
+          aria-disabled="true"
+        >
+          <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+        </span>
+      }
+    </span>
+  </div>
+} @else {
+  <span class="pa__empty">—</span>
+}

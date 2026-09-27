@@ -1,5 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { HttpEvent } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { StorageService } from './storage.service';
+import { isPersistable } from '../http/cache-policy';
 
 /** A single entry in the in-memory cache. */
 export interface CacheEntry<T = unknown> {
@@ -25,6 +28,7 @@ const SWEEP_INTERVAL_MS = 60_000; // garbage-collect expired entries once a minu
 type CrossTabMessage =
   | { type: 'set'; key: string }
   | { type: 'invalidate'; pattern: string }
+  | { type: 'evict'; key: string }
   | { type: 'clear' };
 
 /**
@@ -58,7 +62,9 @@ export interface InvalidationEvent {
  * Smart HTTP cache.
  *
  *   - In-memory `Map` for O(1) reads.
- *   - localStorage mirror so a hard refresh keeps the cache (TTL respected).
+ *   - localStorage mirror so a hard refresh keeps the cache (TTL respected) —
+ *     ONLY for the non-personal resources allowlisted in `PERSISTABLE`
+ *     (`core/http/cache-policy.ts`); everything else is memory-only.
  *   - BroadcastChannel sync so a write in tab A is visible to tab B.
  *   - Background sweep every minute drops expired entries.
  *
@@ -92,14 +98,42 @@ export class HttpCacheService {
 
   // ─────────────── public API ───────────────
 
+  /**
+   * Increments on every eviction (invalidate / clear / evictKeys, local or
+   * cross-tab). A GET captures it when sent and only stores its response if
+   * it's unchanged — so a read that raced a mutation can't write pre-mutation
+   * data back into the cache after the mutation invalidated it.
+   */
+  get epoch(): number {
+    return this.epochValue;
+  }
+  private epochValue = 0;
+
+  /** In-flight GETs by cache key, so identical concurrent requests share one network call. */
+  readonly inflight = new Map<string, Observable<HttpEvent<unknown>>>();
+
   get<T>(key: string): T | null {
+    return this.getEntry<T>(key)?.data ?? null;
+  }
+
+  /** Fresh entry with its metadata (e.g. `cachedAt`), or `null`. */
+  getEntry<T>(key: string): CacheEntry<T> | null {
     const entry = this.mem.get(key) as CacheEntry<T> | undefined;
     if (!entry) return null;
     if (Date.now() >= entry.expiresAt) {
       this.evict(key);
       return null;
     }
-    return entry.data;
+    return entry;
+  }
+
+  /** Evict exact keys (no substring matching) — used by the page refresh action. */
+  evictKeys(keys: Iterable<string>): void {
+    for (const key of keys) {
+      this.evict(key);
+      this.broadcast({ type: 'evict', key });
+    }
+    this.epochValue++;
   }
 
   set<T>(key: string, data: T, ttlMs: number): void {
@@ -110,8 +144,12 @@ export class HttpCacheService {
       expiresAt: now + ttlMs,
     };
     this.mem.set(key, entry as CacheEntry);
-    this.persist(key, entry);
-    this.broadcast({ type: 'set', key });
+    // Memory-only entries never touch disk; other tabs can only pick up
+    // persisted entries (they read the payload back from storage).
+    if (isPersistable(key)) {
+      this.persist(key, entry);
+      this.broadcast({ type: 'set', key });
+    }
   }
 
   /** Drop every entry whose key contains `pattern` (substring, case-sensitive). */
@@ -140,6 +178,7 @@ export class HttpCacheService {
       }
       this.broadcast({ type: 'invalidate', pattern });
     }
+    this.epochValue++;
 
     this.invalidationSignal.set({
       pattern: clean[clean.length - 1],
@@ -151,6 +190,8 @@ export class HttpCacheService {
   /** Wipe everything — used on logout, role switch, etc. */
   clear(): void {
     for (const key of [...this.mem.keys()]) this.evict(key);
+    this.inflight.clear();
+    this.epochValue++;
     this.broadcast({ type: 'clear' });
   }
 
@@ -179,6 +220,12 @@ export class HttpCacheService {
             continue;
           }
           const cacheKey = fullKey.slice(STORAGE_PREFIX.length);
+          // Purges anything persisted before it was made memory-only
+          // (e.g. personal data cached by an older build).
+          if (!isPersistable(cacheKey)) {
+            toRemove.push(fullKey);
+            continue;
+          }
           this.mem.set(cacheKey, parsed.e);
         } catch {
           toRemove.push(fullKey);
@@ -257,10 +304,19 @@ export class HttpCacheService {
         this.mem.delete(key);
         this.storage.remove(STORAGE_PREFIX + key);
       }
+      this.inflight.clear();
+      this.epochValue++;
+      return;
+    }
+
+    if (msg.type === 'evict') {
+      this.mem.delete(msg.key);
+      this.epochValue++;
       return;
     }
 
     if (msg.type === 'invalidate') {
+      this.epochValue++;
       for (const key of [...this.mem.keys()]) {
         if (key.includes(msg.pattern)) {
           this.mem.delete(key);

@@ -1,6 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { timeout, catchError, throwError } from 'rxjs';
 import { AUTH_ENDPOINTS } from '../auth/auth.config';
+import { REQUEST_TIMEOUT } from '../http/http-context.tokens';
 
 /**
  * Caps how long any request may hang with no response.
@@ -39,7 +40,7 @@ export const timeoutInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   return next(req).pipe(
-    timeout(REQUEST_TIMEOUT_MS),
+    timeout(req.context.get(REQUEST_TIMEOUT) ?? REQUEST_TIMEOUT_MS),
     catchError((err) => {
       if (err?.name === 'TimeoutError') {
         return throwError(

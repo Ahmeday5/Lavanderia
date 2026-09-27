@@ -1,3 +1,5 @@
+@use '../../../../shared/styles/responsive-table' as rt;
+
 :host {
   display: block;
   width: 100%;
@@ -171,68 +173,124 @@
   }
 }
 
-/* ═══════════════ GRID ═══════════════ */
-.cup-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-  width: 100%;
-}
-
-.cup-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 18px;
-  border-radius: 16px;
+/* ═══════════════ PANEL / TABLE ═══════════════ */
+.cup-panel {
+  border-radius: 18px;
   background: var(--bg2);
   border: 1px solid var(--brd);
-  box-shadow: 0 1px 2px rgba(80, 40, 130, 0.04);
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.18s ease, border-color 0.18s ease;
-  animation: cup-card-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  overflow: hidden;
+}
+
+.cup-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+
+  thead th {
+    padding: 13px 18px;
+    text-align: start;
+    font-weight: 600;
+    font-size: 10.5px;
+    color: var(--txt2);
+    background: var(--bg3);
+    border-bottom: 1px solid var(--brd);
+  }
+
+  tbody td {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--brd);
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.cup-row {
+  transition: background 0.15s ease;
+  animation: cup-row-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 
   &:hover {
-    transform: translateY(-3px);
-    border-color: rgba(109, 74, 184, 0.28);
-    box-shadow: 0 16px 32px -14px rgba(80, 40, 130, 0.2);
+    background: rgba(109, 74, 184, 0.04);
   }
 
   &--banned {
-    background: rgba(163, 45, 45, 0.02);
-    border-color: rgba(163, 45, 45, 0.15);
+    background: rgba(163, 45, 45, 0.03);
   }
 }
 
-.cup-card__top {
+.cup-customer {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
+  gap: 11px;
 }
 
-.cup-card__avatar {
+.cup-avatar {
   flex-shrink: 0;
-  width: 46px;
-  height: 46px;
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #6d4ab8, #382a6e);
   color: #fff;
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 700;
   box-shadow: 0 6px 14px -6px rgba(109, 74, 184, 0.5);
+
+  &--off {
+    background: linear-gradient(135deg, #9ca3af, #4b5563);
+    box-shadow: none;
+  }
+}
+
+.cup-customer__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cup-customer__name {
+  font-weight: 700;
+  color: var(--txt);
+}
+
+.cup-customer__id,
+.cup-muted {
+  font-size: 10.5px;
+  color: var(--txt3);
+}
+
+.cup-city i {
+  margin-inline-end: 4px;
+  font-size: 10px;
+  color: var(--txt3);
+}
+
+.cup-date {
+  font-size: 11px;
+  color: var(--txt2);
+}
+
+.cup-actions {
+  text-align: end;
 }
 
 .cup-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
+  gap: 6px;
+  padding: 4px 11px;
   border-radius: 999px;
-  font-size: 9.5px;
-  font-weight: 700;
+  font-size: 10.5px;
+  font-weight: 600;
 
   i {
     font-size: 6px;
@@ -253,53 +311,22 @@
   }
 }
 
-.cup-card__name {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--txt);
-  margin-top: 4px;
-}
-
-.cup-card__row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11.5px;
-  color: var(--txt2);
-
-  i {
-    flex-shrink: 0;
-    width: 13px;
-    font-size: 11px;
-    color: var(--txt3);
-  }
-
-  &--muted {
-    font-size: 10.5px;
-    color: var(--txt3);
-  }
-}
-
-.cup-card__verified {
-  color: #6d4ab8 !important;
-  font-size: 11px !important;
-  width: auto !important;
-}
-
 .cup-ban-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  height: 34px;
-  margin-top: 8px;
+  height: 32px;
+  min-width: 96px;
+  padding: 0 13px;
   border: 1px solid var(--re);
-  border-radius: 9px;
+  border-radius: 8px;
   background: transparent;
   color: var(--re);
   font-family: var(--font-base);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 0.15s ease;
 
@@ -336,10 +363,11 @@
   justify-content: center;
   gap: 6px;
   padding: 64px 24px;
-  border-radius: 16px;
-  border: 1.5px dashed var(--brd2);
-  background: var(--bg2);
   text-align: center;
+
+  .cup-ban-btn {
+    margin-top: 12px;
+  }
 }
 
 .cup-empty__icon {
@@ -352,6 +380,11 @@
   color: #6d4ab8;
   font-size: 22px;
   margin-bottom: 8px;
+
+  &--error {
+    background: var(--re-l);
+    color: var(--re);
+  }
 }
 
 .cup-empty__title {
@@ -366,64 +399,13 @@
 }
 
 /* ═══════════════ SKELETON ═══════════════ */
-.cup-skeleton {
-  height: 168px;
-  border-radius: 16px;
+.cup-skel {
+  height: 38px;
+  margin: 14px 18px;
+  border-radius: 9px;
   background: linear-gradient(100deg, var(--bg3) 30%, var(--brd) 50%, var(--bg3) 70%);
   background-size: 200% 100%;
   animation: cup-shimmer 1.4s ease-in-out infinite;
-}
-
-/* ═══════════════ PAGINATION ═══════════════ */
-.cup-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.cup-pagination__info {
-  font-size: 11px;
-  color: var(--txt2);
-}
-
-.cup-pagination__controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.cup-page-btn {
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--brd2);
-  border-radius: 9px;
-  background: var(--bg2);
-  color: var(--txt2);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover:not(:disabled) {
-    background: rgba(109, 74, 184, 0.1);
-    border-color: #6d4ab8;
-    color: #6d4ab8;
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-}
-
-.cup-page-current {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--txt);
-  white-space: nowrap;
 }
 
 /* ═══════════════ ANIMATIONS ═══════════════ */
@@ -438,10 +420,10 @@
   }
 }
 
-@keyframes cup-card-in {
+@keyframes cup-row-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -472,8 +454,23 @@
 @media (prefers-reduced-motion: reduce) {
   .cup-hero,
   .cup-hero__glow,
-  .cup-card,
-  .cup-skeleton {
+  .cup-row,
+  .cup-skel {
     animation: none !important;
+  }
+}
+
+/* ═══════════════ RESPONSIVE ═══════════════ */
+// Table on wide screens, a grid of cards on narrow ones (shared pattern).
+.cup-panel {
+  @include rt.cards-below;
+}
+
+@media (max-width: 640px) {
+  .cup-hero {
+    padding: 22px 20px;
+  }
+  .cup-hero__title {
+    font-size: 21px;
   }
 }

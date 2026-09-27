@@ -1,0 +1,108 @@
+// Responsive data table: a regular table on wide screens; below the
+// breakpoint, a grid of cards that fits as many columns as the width allows
+// (two side by side on small tablets, one on phones) with no extra breakpoints.
+//
+// Include it on the element that WRAPS the table (the page's panel), as the
+// LAST rule in the stylesheet:
+//
+//   .xp-panel {
+//     @include rt.cards-below;
+//   }
+//
+// Selectors deliberately use the full `tbody tr td` chain: Angular's style
+// encapsulation adds an attribute to every compound selector, so a page rule
+// like `tbody tr:last-child td` would otherwise out-rank these card rules.
+//
+// Markup contract:
+//   - every `<td>` that should show a caption carries `data-label="…"`
+//   - the FIRST cell is the card header (identity: avatar + name) — no caption
+//   - a cell WITHOUT `data-label` (e.g. actions) spans the full card width,
+//     sticks to the card's bottom edge, and stretches its buttons for tapping
+
+$cards-breakpoint: 760px !default;
+/// Narrowest a card may get before the grid drops to fewer columns.
+$card-min-width: 290px !default;
+$card-gap: 12px !default;
+
+@mixin cards-below($breakpoint: $cards-breakpoint, $card-min: $card-min-width) {
+  @media (max-width: $breakpoint) {
+    padding: $card-gap;
+    background: var(--bg3);
+
+    table {
+      display: block;
+      white-space: normal;
+    }
+
+    thead {
+      display: none;
+    }
+
+    tbody {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, $card-min), 1fr));
+      gap: $card-gap;
+    }
+
+    tbody tr {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 14px 16px;
+      border: 1px solid var(--brd);
+      border-radius: 14px;
+      background: var(--bg2);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      transition: border-color 0.15s ease;
+
+      &:hover {
+        background: var(--bg2);
+        border-color: var(--brd2);
+      }
+    }
+
+    tbody tr td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+      padding: 7px 0;
+      border: none;
+      text-align: end;
+
+      &[data-label]::before {
+        content: attr(data-label);
+        flex-shrink: 0;
+        font-size: 10.5px;
+        font-weight: 500;
+        color: var(--txt3);
+        text-align: start;
+      }
+
+      &:first-child {
+        justify-content: flex-start;
+        padding: 0 0 12px;
+        margin-bottom: 4px;
+        border-bottom: 1px dashed var(--brd);
+        text-align: start;
+
+        &::before {
+          display: none;
+        }
+      }
+
+      &:not([data-label]) {
+        display: block;
+        margin-top: auto;
+        padding: 12px 0 0;
+
+        > button,
+        > a {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+  }
+}

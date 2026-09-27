@@ -1,8 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DialogService } from '../../../../core/services/dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ApiError } from '../../../../core/models/api-response.model';
+import { createPagedList } from '../../../../core/utils/paged-list.util';
+import { withLocalSearch } from '../../../../core/utils/local-search.util';
+import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
+import { RefreshButtonComponent } from '../../../../shared/components/refresh-button/refresh-button.component';
 import { CitiesService } from '../../services/cities.service';
 import { City } from '../../models/city.model';
 import { CityFormModalComponent } from '../../components/city-form-modal/city-form-modal.component';
@@ -11,7 +15,7 @@ import { CityFormModalComponent } from '../../components/city-form-modal/city-fo
   selector: 'app-cities-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, CityFormModalComponent],
+  imports: [FormsModule, CityFormModalComponent, PaginationComponent, RefreshButtonComponent],
   templateUrl: './cities-list.component.html',
   styleUrl: './cities-list.component.scss',
 })
@@ -20,34 +24,12 @@ export class CitiesListComponent {
   private readonly dialog = inject(DialogService);
   private readonly toast = inject(ToastService);
 
-  protected readonly isLoading = signal(true);
-  protected readonly cities = signal<City[]>([]);
-  protected readonly searchTerm = signal('');
+  protected readonly list = createPagedList(
+    withLocalSearch((query) => this.citiesService.list(query), (city) => [city.name]),
+  );
 
   protected readonly isModalOpen = signal(false);
   protected readonly editingCity = signal<City | null>(null);
-
-  protected readonly filteredCities = computed(() => {
-    const term = this.searchTerm().trim().toLowerCase();
-    const all = this.cities();
-    if (!term) return all;
-    return all.filter((c) => c.name.toLowerCase().includes(term));
-  });
-
-  constructor() {
-    this.loadCities();
-  }
-
-  protected loadCities(): void {
-    this.isLoading.set(true);
-    this.citiesService.list().subscribe({
-      next: (cities) => {
-        this.cities.set(cities);
-        this.isLoading.set(false);
-      },
-      error: () => this.isLoading.set(false),
-    });
-  }
 
   protected openCreateModal(): void {
     this.editingCity.set(null);
@@ -63,14 +45,10 @@ export class CitiesListComponent {
     this.isModalOpen.set(false);
   }
 
-  protected onSaved(city: City): void {
+  /** The server owns ordering and totals, so refetch the page instead of patching it locally. */
+  protected onSaved(): void {
     this.isModalOpen.set(false);
-    const current = this.editingCity();
-    this.cities.update((list) =>
-      current
-        ? list.map((c) => (c.id === city.id ? city : c))
-        : [...list, city],
-    );
+    this.list.reload();
   }
 
   protected async onDelete(city: City): Promise<void> {
@@ -84,8 +62,8 @@ export class CitiesListComponent {
 
     this.citiesService.delete(city.id).subscribe({
       next: () => {
-        this.cities.update((list) => list.filter((c) => c.id !== city.id));
         this.toast.success('تم حذف المدينة بنجاح');
+        this.list.reload();
       },
       error: (err: ApiError) => this.toast.error(err.message),
     });

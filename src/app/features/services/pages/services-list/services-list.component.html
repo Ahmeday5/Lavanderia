@@ -16,13 +16,13 @@
 
       <div class="sp-hero__stats">
         <div class="sp-hero__stat">
-          <span class="sp-hero__stat-value">{{ services().length }}</span>
+          <span class="sp-hero__stat-value">{{ list.count() }}</span>
           <span class="sp-hero__stat-label">خدمة</span>
         </div>
         <div class="sp-hero__stat-divider"></div>
         <div class="sp-hero__stat">
-          <span class="sp-hero__stat-value">{{ totalItemsCount() }}</span>
-          <span class="sp-hero__stat-label">صنف</span>
+          <span class="sp-hero__stat-value">{{ pageItemsCount() }}</span>
+          <span class="sp-hero__stat-label">صنف في هذه الصفحة</span>
         </div>
       </div>
     </div>
@@ -36,15 +36,17 @@
         type="text"
         class="sp-search__input"
         placeholder="ابحث عن خدمة..."
-        [ngModel]="searchTerm()"
-        (ngModelChange)="searchTerm.set($event)"
+        [ngModel]="list.searchInput()"
+        (ngModelChange)="list.setSearch($event)"
       />
-      @if (searchTerm()) {
-        <button type="button" class="sp-search__clear" (click)="searchTerm.set('')" aria-label="مسح البحث">
+      @if (list.searchInput()) {
+        <button type="button" class="sp-search__clear" (click)="list.clearSearch()" aria-label="مسح البحث">
           <i class="fa-solid fa-xmark"></i>
         </button>
       }
     </div>
+
+    <app-refresh-button />
 
     <button type="button" class="sp-add-btn" (click)="openCreateServiceModal()">
       <i class="fa-solid fa-plus"></i>
@@ -53,24 +55,36 @@
   </div>
 
   <!-- ── Content ── -->
-  @if (isLoading()) {
+  @if (list.isLoading()) {
     <div class="sp-list">
       @for (i of [1, 2, 3, 4, 5]; track i) {
         <div class="sp-skeleton"></div>
       }
     </div>
-  } @else if (filteredServices().length === 0) {
+  } @else if (list.error()) {
+    <div class="sp-empty" role="alert">
+      <div class="sp-empty__icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="sp-empty__title">تعذّر تحميل الخدمات</div>
+      <div class="sp-empty__subtitle">{{ list.error()?.message }}</div>
+      <button type="button" class="sp-add-btn" (click)="list.reload()">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>إعادة المحاولة</span>
+      </button>
+    </div>
+  } @else if (list.items().length === 0) {
     <div class="sp-empty">
       <div class="sp-empty__icon">
         <i class="fa-solid fa-shirt"></i>
       </div>
       <div class="sp-empty__title">
-        {{ searchTerm() ? 'لا توجد نتائج مطابقة' : 'لا توجد خدمات بعد' }}
+        {{ list.search() ? 'لا توجد نتائج مطابقة' : 'لا توجد خدمات بعد' }}
       </div>
       <div class="sp-empty__subtitle">
-        {{ searchTerm() ? 'جرّب مصطلح بحث آخر' : 'ابدأ بإضافة أول خدمة لعرضها في تطبيق العملاء' }}
+        {{ list.search() ? 'جرّب مصطلح بحث آخر' : 'ابدأ بإضافة أول خدمة لعرضها في تطبيق العملاء' }}
       </div>
-      @if (!searchTerm()) {
+      @if (!list.search()) {
         <button type="button" class="sp-add-btn" (click)="openCreateServiceModal()">
           <i class="fa-solid fa-plus"></i>
           <span>إضافة خدمة</span>
@@ -79,18 +93,20 @@
     </div>
   } @else {
     <div class="sp-list">
-      @for (service of filteredServices(); track service.id; let i = $index) {
+      @for (service of list.items(); track service.id; let i = $index) {
         <article
           class="sp-row"
           [class.sp-row--open]="expandedServiceId() === service.id"
           [style.animation-delay.ms]="i * 30"
         >
           <div class="sp-row__main" (click)="toggleExpand(service)">
-            <div class="sp-row__icon">{{ service.icon }}</div>
+            <div class="sp-row__icon">
+              <app-thumb [src]="service.imageUrl" [alt]="service.name" icon="fa-shirt" />
+            </div>
 
             <div class="sp-row__body">
               <div class="sp-row__name">{{ service.name }}</div>
-              <div class="sp-row__meta">{{ service.items.length }} صنف مرتبط</div>
+              <div class="sp-row__meta">{{ itemCount(service.id) ?? '…' }} صنف مرتبط</div>
             </div>
 
             <div class="sp-row__actions">
@@ -123,17 +139,30 @@
                   <span class="sp-spinner"></span>
                   جارٍ تحميل الأصناف...
                 </div>
+              } @else if (itemsError()) {
+                <div class="sp-items__empty" role="alert">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                  تعذّر تحميل الأصناف
+                  <button type="button" class="sp-add-item-btn" (click)="loadExpandedItems()">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>إعادة المحاولة</span>
+                  </button>
+                </div>
               } @else {
-                @if (service.items.length === 0) {
+                @if (expandedItems().length === 0) {
                   <div class="sp-items__empty">
                     <i class="fa-solid fa-inbox"></i>
                     لا توجد أصناف لهذه الخدمة بعد
                   </div>
                 } @else {
                   <div class="sp-items__grid">
-                    @for (item of service.items; track item.id) {
+                    @for (item of expandedItems(); track item.id) {
                       <div class="sp-item">
-                        <span class="sp-item__dot"></span>
+                        @if (item.imageUrl) {
+                          <app-thumb [src]="item.imageUrl" [alt]="item.name" icon="fa-tag" [size]="26" style="border-radius: 7px" />
+                        } @else {
+                          <span class="sp-item__dot"></span>
+                        }
                         <span class="sp-item__name">{{ item.name }}</span>
                         <div class="sp-item__actions">
                           <button type="button" class="sp-item-btn" (click)="openEditItemModal(item)" title="تعديل">
@@ -159,20 +188,29 @@
       }
     </div>
   }
+
+  <app-pagination
+    [pageIndex]="list.pageIndex()"
+    [pageSize]="list.pageSize()"
+    [count]="list.count()"
+    [totalPages]="list.totalPages()"
+    [disabled]="list.isLoading()"
+    (pageChange)="list.goToPage($event)"
+    (pageSizeChange)="list.setPageSize($event)"
+  />
 </div>
 
 <app-service-form-modal
   [open]="isServiceModalOpen()"
   [service]="editingService()"
   (closed)="closeServiceModal()"
-  (saved)="onServiceSaved($event)"
+  (saved)="onServiceSaved()"
 />
 
 <app-service-item-form-modal
   [open]="isItemModalOpen()"
   [item]="editingItem()"
-  [services]="services()"
   [defaultServiceId]="newItemServiceId()"
   (closed)="closeItemModal()"
-  (saved)="onItemSaved($event)"
+  (saved)="onItemSaved()"
 />

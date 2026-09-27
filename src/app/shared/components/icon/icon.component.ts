@@ -19,7 +19,8 @@ export type IconName =
   | 'washing-machine'
   | 'user-shield'
   | 'store'
-  | 'user-heart';
+  | 'user-heart'
+  | 'truck';
 
 const PATHS: Record<IconName, string> = {
   home: 'M3 9.5L10 4l7 5.5V16a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-3H8v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5Z',
@@ -42,6 +43,8 @@ const PATHS: Record<IconName, string> = {
     'M3 7.5 4 3h12l1 4.5M3 7.5v8.5a1 1 0 0 0 1 1h1.5v-5h3v5H14v-5h3v5h1.5a1 1 0 0 0 1-1V7.5M3 7.5a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0',
   'user-heart':
     'M8 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm-6 7c.4-3.3 2.7-5.3 6-5.3.7 0 1.4.1 2 .3M14.3 11.2c1-.9 2.4-.6 2.9.4.5 1.2-.2 2.3-2.9 4.4-2.7-2.1-3.4-3.2-2.9-4.4.5-1 1.9-1.3 2.9-.4Z',
+  truck:
+    'M2 5h10v8H2V5Zm10 3h3l3 3v2h-6V8ZM5.5 16a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm9 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z',
 };
 
 @Component({

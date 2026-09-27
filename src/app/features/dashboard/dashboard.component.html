@@ -16,8 +16,11 @@
         </p>
       </div>
 
-      <div class="dp-hero__badge">
-        <span class="dp-hero__badge-role">{{ auth.currentUser()?.role }}</span>
+      <div class="dp-hero__side">
+        <div class="dp-hero__badge">
+          <span class="dp-hero__badge-role">{{ auth.currentUser()?.role }}</span>
+        </div>
+        <app-refresh-button />
       </div>
     </div>
   </header>

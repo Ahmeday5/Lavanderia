@@ -65,6 +65,11 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/customers/customers.routes').then((m) => m.customersRoutes),
       },
+      {
+        path: 'drivers',
+        loadChildren: () =>
+          import('./features/drivers/drivers.routes').then((m) => m.driversRoutes),
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

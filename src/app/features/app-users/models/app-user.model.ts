@@ -1,3 +1,5 @@
+import { asRecord, asString } from '../../../core/utils/coerce.util';
+
 /**
  * Dashboard admin roles. Backend currently only issues `'Admin'` — extend
  * this union (and `APP_USER_ROLES` in the role-select) once more roles
@@ -24,4 +26,14 @@ export interface CreateAppUserRequest {
 export interface UpdateAppUserRequest {
   email: string;
   role: AppUserRole;
+}
+
+/** Maps a raw API row into a well-formed `AppUser`. Unknown roles are shown as-is. */
+export function toAppUser(raw: unknown): AppUser {
+  const r = asRecord(raw);
+  return {
+    id: asString(r['id']),
+    email: asString(r['email']),
+    role: asString(r['role'], APP_USER_ROLES[0]) as AppUserRole,
+  };
 }

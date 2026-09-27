@@ -1,6 +1,6 @@
 import { Observable, EMPTY } from 'rxjs';
 import { map, expand, reduce } from 'rxjs/operators';
-import { PagedResponse } from '../models/api-response.model';
+import { PagedQuery, PagedResponse } from '../models/api-response.model';
 
 /**
  * Coerces any list-shaped response into a plain array. Tolerates every
@@ -85,12 +85,46 @@ export function asPaged<T>(value: unknown): PagedResponse<T> {
 
 /**
  * RxJS operator: normalize a paged response stream to `PagedResponse<T>`.
+ * Pass a row mapper to also coerce every row into a well-formed model —
+ * strongly preferred, since it shields templates from backend shape drift.
  *
- *   this.api.get<unknown>(url).pipe(toPaged<Item>())
+ *   this.api.get<unknown>(url).pipe(toPaged(toItem))
  */
-export function toPaged<T>() {
+export function toPaged<T>(mapRow?: (raw: unknown) => T) {
   return (source$: Observable<unknown>): Observable<PagedResponse<T>> =>
-    source$.pipe(map((v) => asPaged<T>(v)));
+    source$.pipe(
+      map((v) => {
+        const page = asPaged<unknown>(v);
+        return mapRow
+          ? { ...page, data: page.data.map(mapRow) }
+          : (page as PagedResponse<T>);
+      }),
+    );
+}
+
+/**
+ * Builds the multipart body for the backend's image-upload endpoints,
+ * which expect the binary under a single `file` field.
+ */
+export function toImageFormData(file: File): FormData {
+  const body = new FormData();
+  body.append('file', file, file.name);
+  return body;
+}
+
+/** Uploads get a generous timeout: a few MB on a weak mobile link is slow but legitimate. */
+export const UPLOAD_TIMEOUT_MS = 120_000;
+
+/**
+ * Serializes a `PagedQuery` into the backend's query-string convention
+ * (`PageIndex` / `PageSize` / `search`). Empty values are dropped by `ApiService`.
+ */
+export function toPagedParams(query: PagedQuery): Record<string, unknown> {
+  return {
+    search: query.search?.trim() || undefined,
+    PageIndex: query.pageIndex,
+    PageSize: query.pageSize,
+  };
 }
 
 /** Default page size used when draining a paginated endpoint. */

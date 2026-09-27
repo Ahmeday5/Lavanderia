@@ -1,0 +1,264 @@
+:host {
+  display: block;
+}
+
+.ip__label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--txt);
+}
+
+.ip__zone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1.5px dashed var(--brd2);
+  border-radius: 14px;
+  background: var(--bg3);
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+
+  &--drag {
+    border-color: var(--bl);
+    background: var(--bl-l);
+    box-shadow: 0 0 0 4px rgba(27, 95, 168, 0.12);
+  }
+
+  &--error {
+    border-color: var(--re);
+    border-style: solid;
+  }
+
+  &--locked {
+    opacity: 0.85;
+  }
+}
+
+.ip__preview {
+  position: relative;
+  flex-shrink: 0;
+  width: 76px;
+  height: 76px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--brd);
+  border-radius: 12px;
+  background: var(--bg2);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px -10px rgba(10, 42, 74, 0.45);
+
+    .ip__preview-hover {
+      opacity: 1;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bl);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.ip__placeholder {
+  font-size: 26px;
+  color: var(--txt3);
+}
+
+.ip__preview-hover,
+.ip__overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 7, 13, 0.45);
+  color: #fff;
+  font-size: 17px;
+}
+
+.ip__preview-hover {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.ip__overlay {
+  background: rgba(5, 7, 13, 0.55);
+}
+
+.ip__spinner {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ip-spin 0.7s linear infinite;
+}
+
+.ip__badge {
+  position: absolute;
+  bottom: 4px;
+  inset-inline-start: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--gr);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.ip__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ip__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--txt);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ip__meta {
+  font-size: 10.5px;
+  color: var(--txt2);
+}
+
+.ip__progress {
+  position: relative;
+  height: 5px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: var(--brd);
+  overflow: hidden;
+
+  span {
+    position: absolute;
+    inset-block: 0;
+    width: 40%;
+    border-radius: inherit;
+    background: var(--brand-gradient);
+    animation: ip-indeterminate 1.1s ease-in-out infinite;
+  }
+}
+
+.ip__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 7px;
+  flex-wrap: wrap;
+}
+
+.ip__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border: 1px solid var(--bl);
+  border-radius: 8px;
+  background: var(--bg2);
+  color: var(--bl);
+  font-family: var(--font-base);
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  i {
+    font-size: 10px;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--bl);
+    color: #fff;
+  }
+
+  &--ghost {
+    border-color: var(--brd2);
+    color: var(--txt2);
+
+    &:hover:not(:disabled) {
+      background: var(--bg3);
+      color: var(--txt);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.ip__input {
+  display: none;
+}
+
+.ip__messages {
+  min-height: 0;
+}
+
+.ip__msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 11px;
+  line-height: 1.6;
+
+  i {
+    margin-top: 3px;
+    font-size: 10.5px;
+  }
+
+  &--error {
+    color: var(--re);
+  }
+
+  &--info {
+    color: var(--bl);
+  }
+}
+
+@keyframes ip-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ip-indeterminate {
+  from {
+    inset-inline-start: -40%;
+  }
+  to {
+    inset-inline-start: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ip__spinner,
+  .ip__progress span {
+    animation-duration: 2s;
+  }
+}

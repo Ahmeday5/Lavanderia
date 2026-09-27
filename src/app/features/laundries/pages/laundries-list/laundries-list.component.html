@@ -20,8 +20,8 @@
       </div>
 
       <div class="lp-hero__stat">
-        <span class="lp-hero__stat-value">{{ count() }}</span>
-        <span class="lp-hero__stat-label">مغسلة مسجّلة</span>
+        <span class="lp-hero__stat-value">{{ list.count() }}</span>
+        <span class="lp-hero__stat-label">{{ list.search() ? 'نتيجة مطابقة' : 'مغسلة مسجّلة' }}</span>
       </div>
     </div>
   </header>
@@ -34,51 +34,47 @@
         type="text"
         class="lp-search__input"
         placeholder="ابحث بالاسم أو رقم الهاتف..."
-        [ngModel]="searchTerm()"
-        (ngModelChange)="onSearchInput($event)"
+        aria-label="بحث عن مغسلة بالاسم أو رقم الهاتف"
+        [ngModel]="list.searchInput()"
+        (ngModelChange)="list.setSearch($event)"
+        (keydown.escape)="list.clearSearch()"
       />
-      @if (searchTerm()) {
-        <button type="button" class="lp-search__clear" (click)="clearSearch()" aria-label="مسح البحث">
+      @if (list.searchInput()) {
+        <button type="button" class="lp-search__clear" (click)="list.clearSearch()" aria-label="مسح البحث">
           <i class="fa-solid fa-xmark"></i>
         </button>
       }
     </div>
+
+    <app-refresh-button />
   </div>
 
   <!-- ── Content ── -->
   <div class="lp-panel">
-    @if (isLoading()) {
-      <div class="lp-table-wrap">
-        <table class="lp-table">
-          <thead>
-            <tr>
-              <th>المغسلة</th>
-              <th>رقم الهاتف</th>
-              <th>المدينة</th>
-              <th>الحالة</th>
-              <th>تاريخ التسجيل</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (i of [1, 2, 3, 4, 5]; track i) {
-              <tr class="lp-row-skel">
-                <td colspan="6"><div class="lp-skel-bar"></div></td>
-              </tr>
-            }
-          </tbody>
-        </table>
+    @if (list.isLoading()) {
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <div class="lp-skel" [style.animation-delay.ms]="i * 60"></div>
+      }
+    } @else if (list.error()) {
+      <div class="lp-empty" role="alert">
+        <div class="lp-empty__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="lp-empty__title">تعذّر تحميل المغاسل</div>
+        <div class="lp-empty__subtitle">{{ list.error()?.message }}</div>
+        <button type="button" class="lp-ban-btn lp-ban-btn--unban" (click)="list.reload()">
+          <i class="fa-solid fa-rotate-right"></i>
+          <span>إعادة المحاولة</span>
+        </button>
       </div>
-    } @else if (laundries().length === 0) {
+    } @else if (list.items().length === 0) {
       <div class="lp-empty">
         <div class="lp-empty__icon">
           <i class="fa-solid fa-store-slash"></i>
         </div>
         <div class="lp-empty__title">
-          {{ searchTerm() ? 'لا توجد نتائج مطابقة' : 'لا توجد مغاسل مسجّلة بعد' }}
+          {{ list.search() ? 'لا توجد نتائج مطابقة' : 'لا توجد مغاسل مسجّلة بعد' }}
         </div>
         <div class="lp-empty__subtitle">
-          {{ searchTerm() ? 'جرّب اسمًا أو رقم هاتف آخر' : 'ستظهر المغاسل هنا فور تسجيلها عبر التطبيق' }}
+          {{ list.search() ? 'جرّب اسمًا أو رقم هاتف آخر' : 'ستظهر المغاسل هنا فور تسجيلها عبر التطبيق' }}
         </div>
       </div>
     } @else {
@@ -86,18 +82,18 @@
         <table class="lp-table">
           <thead>
             <tr>
-              <th>المغسلة</th>
-              <th>رقم الهاتف</th>
-              <th>المدينة</th>
-              <th>الحالة</th>
-              <th>تاريخ التسجيل</th>
-              <th></th>
+              <th scope="col">المغسلة</th>
+              <th scope="col">رقم الهاتف</th>
+              <th scope="col">المدينة</th>
+              <th scope="col">الحالة</th>
+              <th scope="col">تاريخ التسجيل</th>
+              <th scope="col"><span class="visually-hidden">الإجراءات</span></th>
             </tr>
           </thead>
           <tbody>
-            @for (laundry of laundries(); track laundry.id) {
+            @for (laundry of list.items(); track laundry.id) {
               <tr class="lp-row" [class.lp-row--banned]="laundry.isBanned">
-                <td>
+                <td data-label="المغسلة">
                   <div class="lp-laundry">
                     <div class="lp-laundry__avatar">
                       <i class="fa-solid fa-shirt"></i>
@@ -105,14 +101,11 @@
                     <div class="lp-laundry__name">{{ laundry.name }}</div>
                   </div>
                 </td>
-                <td>
-                  <span class="lp-phone" dir="ltr">{{ laundry.phoneNumber }}</span>
-                  @if (laundry.phoneNumberConfirmed) {
-                    <i class="fa-solid fa-circle-check lp-verified" title="رقم موثّق"></i>
-                  }
+                <td data-label="رقم الهاتف">
+                  <app-phone-actions [phone]="laundry.phoneNumber" [verified]="laundry.phoneNumberConfirmed" />
                 </td>
-                <td>{{ laundry.cityName }}</td>
-                <td>
+                <td data-label="المدينة">{{ laundry.cityName || '—' }}</td>
+                <td data-label="الحالة">
                   @if (laundry.isBanned) {
                     <span class="lp-status lp-status--banned">
                       <i class="fa-solid fa-ban"></i>
@@ -125,16 +118,21 @@
                     </span>
                   }
                 </td>
-                <td class="lp-date">{{ formatDate(laundry.createdAt) }}</td>
+                <td class="lp-date" data-label="تاريخ التسجيل">
+                  <time [attr.datetime]="laundry.createdAt" [title]="formatDateTime(laundry.createdAt)">
+                    {{ formatDate(laundry.createdAt) }}
+                  </time>
+                </td>
                 <td>
                   <button
                     type="button"
                     class="lp-ban-btn"
                     [class.lp-ban-btn--unban]="laundry.isBanned"
-                    [disabled]="isPending(laundry)"
+                    [disabled]="pending.has(laundry.id)"
+                    [attr.aria-busy]="pending.has(laundry.id)"
                     (click)="onToggleBan(laundry)"
                   >
-                    @if (isPending(laundry)) {
+                    @if (pending.has(laundry.id)) {
                       <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                     } @else if (laundry.isBanned) {
                       <i class="fa-solid fa-lock-open"></i>
@@ -150,21 +148,16 @@
           </tbody>
         </table>
       </div>
-
-      <div class="lp-pagination">
-        <div class="lp-pagination__info">
-          عرض {{ rangeStart() }}–{{ rangeEnd() }} من {{ count() }}
-        </div>
-        <div class="lp-pagination__controls">
-          <button type="button" class="lp-page-btn" [disabled]="pageIndex() <= 1" (click)="onPageChange(pageIndex() - 1)">
-            <i class="fa-solid fa-chevron-right"></i>
-          </button>
-          <span class="lp-page-current">{{ pageIndex() }} / {{ totalPages() || 1 }}</span>
-          <button type="button" class="lp-page-btn" [disabled]="pageIndex() >= totalPages()" (click)="onPageChange(pageIndex() + 1)">
-            <i class="fa-solid fa-chevron-left"></i>
-          </button>
-        </div>
-      </div>
     }
   </div>
+
+  <app-pagination
+    [pageIndex]="list.pageIndex()"
+    [pageSize]="list.pageSize()"
+    [count]="list.count()"
+    [totalPages]="list.totalPages()"
+    [disabled]="list.isLoading()"
+    (pageChange)="list.goToPage($event)"
+    (pageSizeChange)="list.setPageSize($event)"
+  />
 </div>

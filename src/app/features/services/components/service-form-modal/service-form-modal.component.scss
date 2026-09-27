@@ -95,55 +95,20 @@
   color: var(--brand);
 }
 
-.sfm__icon-row {
+.sfm__notice {
   display: flex;
   gap: 8px;
-  align-items: center;
-}
-
-.sfm__icon-preview {
-  flex-shrink: 0;
-  width: 38px;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  background: var(--bl-l);
-  border: 1px solid var(--brd2);
+  align-items: flex-start;
+  padding: 10px 12px;
+  margin-bottom: 14px;
   border-radius: 10px;
-  transition: transform 0.15s ease;
-}
+  background: var(--am-l);
+  color: var(--am);
+  font-size: 11.5px;
+  line-height: 1.6;
 
-.sfm__suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-.sfm__chip {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  background: var(--bg2);
-  border: 1px solid var(--brd);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background: var(--bg3);
-    transform: translateY(-1px);
-  }
-
-  &.active {
-    border-color: var(--brand);
-    background: var(--bl-l);
-    box-shadow: 0 0 0 3px rgba(21, 104, 184, 0.12);
+  i {
+    margin-top: 3px;
   }
 }
 

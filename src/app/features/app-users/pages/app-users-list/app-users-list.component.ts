@@ -4,6 +4,10 @@ import { DialogService } from '../../../../core/services/dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ApiError } from '../../../../core/models/api-response.model';
 import { AuthService } from '../../../../core/auth/services/auth.service';
+import { createPagedList } from '../../../../core/utils/paged-list.util';
+import { withLocalSearch } from '../../../../core/utils/local-search.util';
+import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
+import { RefreshButtonComponent } from '../../../../shared/components/refresh-button/refresh-button.component';
 import { AppUsersService } from '../../services/app-users.service';
 import { AppUser } from '../../models/app-user.model';
 import { AppUserFormModalComponent } from '../../components/app-user-form-modal/app-user-form-modal.component';
@@ -12,7 +16,7 @@ import { AppUserFormModalComponent } from '../../components/app-user-form-modal/
   selector: 'app-app-users-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, AppUserFormModalComponent],
+  imports: [FormsModule, AppUserFormModalComponent, PaginationComponent, RefreshButtonComponent],
   templateUrl: './app-users-list.component.html',
   styleUrl: './app-users-list.component.scss',
 })
@@ -22,36 +26,14 @@ export class AppUsersListComponent {
   private readonly toast = inject(ToastService);
   private readonly auth = inject(AuthService);
 
-  protected readonly isLoading = signal(true);
-  protected readonly users = signal<AppUser[]>([]);
-  protected readonly searchTerm = signal('');
+  protected readonly list = createPagedList(
+    withLocalSearch((query) => this.appUsersService.list(query), (user) => [user.email, user.role]),
+  );
 
   protected readonly isModalOpen = signal(false);
   protected readonly editingUser = signal<AppUser | null>(null);
 
   protected readonly currentUserId = computed(() => this.auth.currentUser()?.id ?? null);
-
-  protected readonly filteredUsers = computed(() => {
-    const term = this.searchTerm().trim().toLowerCase();
-    const all = this.users();
-    if (!term) return all;
-    return all.filter((u) => u.email.toLowerCase().includes(term));
-  });
-
-  constructor() {
-    this.loadUsers();
-  }
-
-  protected loadUsers(): void {
-    this.isLoading.set(true);
-    this.appUsersService.list().subscribe({
-      next: (users) => {
-        this.users.set(users);
-        this.isLoading.set(false);
-      },
-      error: () => this.isLoading.set(false),
-    });
-  }
 
   protected initials(email: string): string {
     return email.trim().charAt(0).toUpperCase() || '?';
@@ -75,14 +57,10 @@ export class AppUsersListComponent {
     this.isModalOpen.set(false);
   }
 
-  protected onSaved(user: AppUser): void {
+  /** The server owns ordering and totals, so refetch the page instead of patching it locally. */
+  protected onSaved(): void {
     this.isModalOpen.set(false);
-    const current = this.editingUser();
-    this.users.update((list) =>
-      current
-        ? list.map((u) => (u.id === user.id ? user : u))
-        : [...list, user],
-    );
+    this.list.reload();
   }
 
   protected async onDelete(user: AppUser): Promise<void> {
@@ -101,8 +79,8 @@ export class AppUsersListComponent {
 
     this.appUsersService.delete(user.id).subscribe({
       next: () => {
-        this.users.update((list) => list.filter((u) => u.id !== user.id));
         this.toast.success('تم حذف المستخدم بنجاح');
+        this.list.reload();
       },
       error: (err: ApiError) => this.toast.error(err.message),
     });

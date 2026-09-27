@@ -15,7 +15,7 @@
       </div>
 
       <div class="cp-hero__stat">
-        <span class="cp-hero__stat-value">{{ cities().length }}</span>
+        <span class="cp-hero__stat-value">{{ list.count() }}</span>
         <span class="cp-hero__stat-label">مدينة مسجّلة</span>
       </div>
     </div>
@@ -29,15 +29,17 @@
         type="text"
         class="cp-search__input"
         placeholder="ابحث عن مدينة..."
-        [ngModel]="searchTerm()"
-        (ngModelChange)="searchTerm.set($event)"
+        [ngModel]="list.searchInput()"
+        (ngModelChange)="list.setSearch($event)"
       />
-      @if (searchTerm()) {
-        <button type="button" class="cp-search__clear" (click)="searchTerm.set('')" aria-label="مسح البحث">
+      @if (list.searchInput()) {
+        <button type="button" class="cp-search__clear" (click)="list.clearSearch()" aria-label="مسح البحث">
           <i class="fa-solid fa-xmark"></i>
         </button>
       }
     </div>
+
+    <app-refresh-button />
 
     <button type="button" class="cp-add-btn" (click)="openCreateModal()">
       <i class="fa-solid fa-plus"></i>
@@ -46,24 +48,36 @@
   </div>
 
   <!-- ── Content ── -->
-  @if (isLoading()) {
+  @if (list.isLoading()) {
     <div class="cp-grid">
       @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
         <div class="cp-skeleton"></div>
       }
     </div>
-  } @else if (filteredCities().length === 0) {
+  } @else if (list.error()) {
+    <div class="cp-empty" role="alert">
+      <div class="cp-empty__icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="cp-empty__title">تعذّر تحميل المدن</div>
+      <div class="cp-empty__subtitle">{{ list.error()?.message }}</div>
+      <button type="button" class="cp-add-btn" (click)="list.reload()">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>إعادة المحاولة</span>
+      </button>
+    </div>
+  } @else if (list.items().length === 0) {
     <div class="cp-empty">
       <div class="cp-empty__icon">
         <i class="fa-solid fa-map-pin"></i>
       </div>
       <div class="cp-empty__title">
-        {{ searchTerm() ? 'لا توجد نتائج مطابقة' : 'لا توجد مدن بعد' }}
+        {{ list.search() ? 'لا توجد نتائج مطابقة' : 'لا توجد مدن بعد' }}
       </div>
       <div class="cp-empty__subtitle">
-        {{ searchTerm() ? 'جرّب مصطلح بحث آخر' : 'ابدأ بإضافة أول مدينة لتغطيتها بخدمة الغسيل' }}
+        {{ list.search() ? 'جرّب مصطلح بحث آخر' : 'ابدأ بإضافة أول مدينة لتغطيتها بخدمة الغسيل' }}
       </div>
-      @if (!searchTerm()) {
+      @if (!list.search()) {
         <button type="button" class="cp-add-btn" (click)="openCreateModal()">
           <i class="fa-solid fa-plus"></i>
           <span>إضافة مدينة</span>
@@ -72,7 +86,7 @@
     </div>
   } @else {
     <div class="cp-grid">
-      @for (city of filteredCities(); track city.id; let i = $index) {
+      @for (city of list.items(); track city.id; let i = $index) {
         <article class="cp-card" [style.animation-delay.ms]="i * 35">
           <div class="cp-card__badge">
             <i class="fa-solid fa-location-dot"></i>
@@ -95,11 +109,21 @@
       }
     </div>
   }
+
+  <app-pagination
+    [pageIndex]="list.pageIndex()"
+    [pageSize]="list.pageSize()"
+    [count]="list.count()"
+    [totalPages]="list.totalPages()"
+    [disabled]="list.isLoading()"
+    (pageChange)="list.goToPage($event)"
+    (pageSizeChange)="list.setPageSize($event)"
+  />
 </div>
 
 <app-city-form-modal
   [open]="isModalOpen()"
   [city]="editingCity()"
   (closed)="closeModal()"
-  (saved)="onSaved($event)"
+  (saved)="onSaved()"
 />

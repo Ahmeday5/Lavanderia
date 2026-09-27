@@ -20,6 +20,7 @@ export const NAV_SECTIONS: MenuSection[] = [
     items: [
       { id: 'laundries', label: 'المغاسل', route: '/laundries', icon: 'store' },
       { id: 'customers', label: 'العملاء', route: '/customers', icon: 'user-heart' },
+      { id: 'drivers', label: 'السائقون', route: '/drivers', icon: 'truck' },
     ],
   },
   {

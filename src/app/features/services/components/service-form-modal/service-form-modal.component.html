@@ -15,12 +15,18 @@
     </div>
     <div class="sfm__title">{{ isEditMode() ? 'تعديل الخدمة' : 'إضافة خدمة جديدة' }}</div>
     <div class="sfm__subtitle">
-      {{ isEditMode() ? 'عدّل بيانات الخدمة وأيقونتها' : 'أضف خدمة جديدة لعرضها في تطبيق العملاء' }}
+      {{ isEditMode() ? 'عدّل اسم الخدمة أو صورتها' : 'أضف خدمة جديدة لعرضها في تطبيق العملاء' }}
     </div>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="sfm__form">
       @if (serverError(); as error) {
-        <div class="alert alert-danger">{{ error }}</div>
+        <div class="alert alert-danger" role="alert">{{ error }}</div>
+      }
+      @if (uploadError()) {
+        <div class="sfm__notice" role="status">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>تم حفظ الخدمة، لكن لم تُرفع الصورة. يمكنك إعادة المحاولة الآن أو الإغلاق ورفعها لاحقًا.</span>
+        </div>
       }
 
       <div class="sfm__field">
@@ -34,51 +40,40 @@
             formControlName="name"
             placeholder="مثال: غسيل الملابس"
             autocomplete="off"
+            [attr.readonly]="isSubmitting() ? '' : null"
           />
         </div>
         <app-form-error [control]="form.controls.name" label="اسم الخدمة" />
       </div>
 
       <div class="sfm__field">
-        <label class="form-label" for="service-icon">الأيقونة</label>
-        <div class="sfm__icon-row">
-          <div class="sfm__icon-preview">{{ form.controls.icon.value || '—' }}</div>
-          <input
-            id="service-icon"
-            type="text"
-            class="form-control"
-            formControlName="icon"
-            placeholder="اختر رمزًا أو الصق SVG"
-            autocomplete="off"
-          />
-        </div>
-        <app-form-error [control]="form.controls.icon" label="الأيقونة" />
-      </div>
-
-      <div class="sfm__suggestions">
-        @for (icon of iconSuggestions; track icon) {
-          <button
-            type="button"
-            class="sfm__chip"
-            [class.active]="form.controls.icon.value === icon"
-            (click)="pickIcon(icon)"
-          >
-            {{ icon }}
-          </button>
-        }
+        <app-image-picker
+          label="صورة الخدمة (اختياري)"
+          [currentUrl]="target()?.imageUrl ?? null"
+          [disabled]="isSubmitting()"
+          [busy]="phase() === 'uploading'"
+          [error]="uploadError()"
+          (fileChange)="onImageChange($event)"
+        />
       </div>
     </form>
   </div>
 
   <ng-container modal-footer>
     <button type="button" class="sfm-btn sfm-btn--ghost" (click)="onClose()" [disabled]="isSubmitting()">
-      إلغاء
+      {{ uploadError() ? 'إغلاق' : 'إلغاء' }}
     </button>
     <button type="button" class="sfm-btn sfm-btn--brand" (click)="onSubmit()" [disabled]="isSubmitting()">
       @if (isSubmitting()) {
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       }
-      {{ isEditMode() ? 'حفظ التعديلات' : 'إضافة الخدمة' }}
+      @switch (phase()) {
+        @case ('saving') { جارٍ الحفظ… }
+        @case ('uploading') { جارٍ رفع الصورة… }
+        @default {
+          {{ uploadError() ? 'إعادة رفع الصورة' : isEditMode() ? 'حفظ التعديلات' : 'إضافة الخدمة' }}
+        }
+      }
     </button>
   </ng-container>
 </app-modal>

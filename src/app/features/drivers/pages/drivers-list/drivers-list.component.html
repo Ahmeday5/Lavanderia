@@ -1,0 +1,179 @@
+<div class="dp">
+  <!-- ── Hero ── -->
+  <header class="dp-hero">
+    <div class="dp-hero__road" aria-hidden="true"></div>
+    <i class="fa-solid fa-motorcycle dp-hero__art" aria-hidden="true"></i>
+
+    <div class="dp-hero__content">
+      <div>
+        <span class="dp-hero__eyebrow">
+          <i class="fa-solid fa-route"></i>
+          فريق التوصيل
+        </span>
+        <h1 class="dp-hero__title">السائقون</h1>
+        <p class="dp-hero__subtitle">
+          تابع سائقي التوصيل المسجّلين، تحقّق من جاهزيتهم، وتحكّم في تفعيل حساباتهم
+        </p>
+      </div>
+
+      <div class="dp-hero__stat">
+        <span class="dp-hero__stat-value">{{ list.count() }}</span>
+        <span class="dp-hero__stat-label">{{ list.search() ? 'نتيجة مطابقة' : 'سائق مسجّل' }}</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Toolbar ── -->
+  <div class="dp-toolbar">
+    <div class="dp-search">
+      <i class="fa-solid fa-magnifying-glass dp-search__icon"></i>
+      <input
+        type="search"
+        class="dp-search__input"
+        placeholder="ابحث بالاسم أو رقم الهاتف..."
+        aria-label="بحث عن سائق بالاسم أو رقم الهاتف"
+        inputmode="search"
+        [ngModel]="list.searchInput()"
+        (ngModelChange)="list.setSearch($event)"
+        (keydown.escape)="list.clearSearch()"
+      />
+      @if (list.searchInput()) {
+        <button type="button" class="dp-search__clear" (click)="list.clearSearch()" aria-label="مسح البحث">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      }
+    </div>
+
+    <app-refresh-button />
+  </div>
+
+  <!-- ── Content ── -->
+  <section class="dp-panel" [attr.aria-busy]="list.isLoading()">
+    @if (list.isLoading() && list.items().length === 0) {
+      @for (i of skeletonRows; track i) {
+        <div class="dp-skel" [style.animation-delay.ms]="i * 60"></div>
+      }
+    } @else if (list.error()) {
+      <div class="dp-state" role="alert">
+        <div class="dp-state__icon dp-state__icon--error"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="dp-state__title">تعذّر تحميل السائقين</div>
+        <div class="dp-state__text">{{ list.error()?.message }}</div>
+        <button type="button" class="dp-btn dp-btn--primary" (click)="list.reload()">
+          <i class="fa-solid fa-rotate-right"></i>
+          إعادة المحاولة
+        </button>
+      </div>
+    } @else if (list.items().length === 0) {
+      <div class="dp-state">
+        <div class="dp-state__icon">
+          <i class="fa-solid" [class.fa-user-slash]="list.search()" [class.fa-motorcycle]="!list.search()"></i>
+        </div>
+        @if (list.search()) {
+          <div class="dp-state__title">لا يوجد سائق يطابق «{{ list.search() }}»</div>
+          <div class="dp-state__text">تأكد من الاسم أو رقم الهاتف، أو جرّب جزءًا منه فقط</div>
+          <button type="button" class="dp-btn" (click)="list.clearSearch()">مسح البحث</button>
+        } @else {
+          <div class="dp-state__title">لا يوجد سائقون بعد</div>
+          <div class="dp-state__text">سيظهر السائقون هنا فور تسجيلهم عبر تطبيق السائق</div>
+        }
+      </div>
+    } @else {
+      <div class="dp-table-wrap" [class.dp-table-wrap--busy]="list.isLoading()">
+        <table class="dp-table">
+          <thead>
+            <tr>
+              <th scope="col">السائق</th>
+              <th scope="col">رقم الهاتف</th>
+              <th scope="col">المدينة</th>
+              <th scope="col">الجاهزية</th>
+              <th scope="col">الحساب</th>
+              <th scope="col">تاريخ التسجيل</th>
+              <th scope="col"><span class="visually-hidden">الإجراءات</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (driver of list.items(); track driver.id; let i = $index) {
+              <tr class="dp-row" [class.dp-row--inactive]="!driver.isActive" [style.animation-delay.ms]="i * 30">
+                <td data-label="السائق">
+                  <div class="dp-driver">
+                    <span class="dp-avatar" [class.dp-avatar--off]="!driver.isActive" aria-hidden="true">
+                      {{ initials(driver.fullName) }}
+                    </span>
+                    <div class="dp-driver__text">
+                      <span class="dp-driver__name">{{ driver.fullName || 'بدون اسم' }}</span>
+                      <span class="dp-driver__id">#{{ driver.id }}</span>
+                    </div>
+                  </div>
+                </td>
+
+                <td data-label="رقم الهاتف">
+                  <app-phone-actions [phone]="driver.phoneNumber" [verified]="driver.phoneNumberConfirmed" />
+                </td>
+
+                <td data-label="المدينة">
+                  <span class="dp-city" [class.dp-muted]="!driver.cityName">
+                    <i class="fa-solid fa-location-dot"></i>
+                    {{ driver.cityName || 'غير محددة' }}
+                  </span>
+                </td>
+
+                <td data-label="الجاهزية">
+                  <span class="dp-avail" [class.dp-avail--on]="driver.isAvailable">
+                    <span class="dp-avail__dot"></span>
+                    {{ driver.isAvailable ? 'متاح الآن' : 'غير متاح' }}
+                  </span>
+                </td>
+
+                <td data-label="الحساب">
+                  <span class="dp-chip" [class.dp-chip--on]="driver.isActive">
+                    <i class="fa-solid" [class.fa-circle-check]="driver.isActive" [class.fa-circle-pause]="!driver.isActive"></i>
+                    {{ driver.isActive ? 'مفعّل' : 'موقوف' }}
+                  </span>
+                </td>
+
+                <td data-label="تاريخ التسجيل">
+                  <time class="dp-date" [attr.datetime]="driver.createdAt" [title]="formatDateTime(driver.createdAt)">
+                    {{ formatDate(driver.createdAt) }}
+                  </time>
+                </td>
+
+                <td class="dp-actions">
+                  <button
+                    type="button"
+                    class="dp-btn dp-btn--sm"
+                    [class.dp-btn--danger]="driver.isActive"
+                    [class.dp-btn--success]="!driver.isActive"
+                    [disabled]="pending.has(driver.id)"
+                    [attr.aria-busy]="pending.has(driver.id)"
+                    (click)="onToggleActive(driver)"
+                  >
+                    @if (pending.has(driver.id)) {
+                      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                      {{ driver.isActive ? 'جارٍ الإيقاف' : 'جارٍ التفعيل' }}
+                    } @else if (driver.isActive) {
+                      <i class="fa-solid fa-user-lock"></i>
+                      إيقاف
+                    } @else {
+                      <i class="fa-solid fa-user-check"></i>
+                      تفعيل
+                    }
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <app-pagination
+    [pageIndex]="list.pageIndex()"
+    [pageSize]="list.pageSize()"
+    [count]="list.count()"
+    [totalPages]="list.totalPages()"
+    [disabled]="list.isLoading()"
+    (pageChange)="list.goToPage($event)"
+    (pageSizeChange)="list.setPageSize($event)"
+  />
+</div>

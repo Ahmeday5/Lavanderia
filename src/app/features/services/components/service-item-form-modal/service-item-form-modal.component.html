@@ -15,12 +15,17 @@
     </div>
     <div class="sim__title">{{ isEditMode() ? 'تعديل الصنف' : 'إضافة صنف جديد' }}</div>
     <div class="sim__subtitle">
-      {{ isEditMode() ? 'عدّل اسم الصنف أو انقله إلى خدمة أخرى' : 'أضف صنفًا جديدًا واربطه بإحدى الخدمات' }}
+      {{ isEditMode() ? 'عدّل اسم الصنف أو صورته أو انقله إلى خدمة أخرى' : 'أضف صنفًا جديدًا واربطه بإحدى الخدمات' }}
     </div>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="sim__form">
       @if (serverError(); as error) {
-        <div class="alert alert-danger">{{ error }}</div>
+        <div class="alert alert-danger" role="alert">{{ error }}</div>
+      }
+      @if (uploadError()) {
+        <div class="alert alert-warning" role="status">
+          تم حفظ الصنف، لكن لم تُرفع الصورة. يمكنك إعادة المحاولة الآن أو الإغلاق ورفعها لاحقًا.
+        </div>
       }
 
       <div class="sim__field">
@@ -34,6 +39,7 @@
             formControlName="name"
             placeholder="مثال: قميص"
             autocomplete="off"
+            [attr.readonly]="isSubmitting() ? '' : null"
           />
         </div>
         <app-form-error [control]="form.controls.name" label="اسم الصنف" />
@@ -44,23 +50,41 @@
         <app-searchable-select
           formControlName="serviceId"
           [options]="serviceOptions()"
-          placeholder="اختر الخدمة"
+          [isDisabled]="isServicesLoading() || isSubmitting()"
+          [placeholder]="isServicesLoading() ? 'جارٍ تحميل الخدمات...' : 'اختر الخدمة'"
           searchPlaceholder="بحث عن خدمة..."
         />
         <app-form-error [control]="form.controls.serviceId" label="الخدمة" />
+      </div>
+
+      <div class="sim__field">
+        <app-image-picker
+          label="صورة الصنف (اختياري)"
+          [currentUrl]="target()?.imageUrl ?? null"
+          [disabled]="isSubmitting()"
+          [busy]="phase() === 'uploading'"
+          [error]="uploadError()"
+          (fileChange)="onImageChange($event)"
+        />
       </div>
     </form>
   </div>
 
   <ng-container modal-footer>
     <button type="button" class="sim-btn sim-btn--ghost" (click)="onClose()" [disabled]="isSubmitting()">
-      إلغاء
+      {{ uploadError() ? 'إغلاق' : 'إلغاء' }}
     </button>
     <button type="button" class="sim-btn sim-btn--brand" (click)="onSubmit()" [disabled]="isSubmitting()">
       @if (isSubmitting()) {
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       }
-      {{ isEditMode() ? 'حفظ التعديلات' : 'إضافة الصنف' }}
+      @switch (phase()) {
+        @case ('saving') { جارٍ الحفظ… }
+        @case ('uploading') { جارٍ رفع الصورة… }
+        @default {
+          {{ uploadError() ? 'إعادة رفع الصورة' : isEditMode() ? 'حفظ التعديلات' : 'إضافة الصنف' }}
+        }
+      }
     </button>
   </ng-container>
 </app-modal>

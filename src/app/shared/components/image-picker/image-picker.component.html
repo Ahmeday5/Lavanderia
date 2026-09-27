@@ -1,0 +1,73 @@
+<div class="ip">
+  <span class="ip__label">{{ label() }}</span>
+
+  <div
+    class="ip__zone"
+    [class.ip__zone--drag]="isDragOver()"
+    [class.ip__zone--error]="!!shownError()"
+    [class.ip__zone--locked]="isLocked()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+  >
+    <button
+      type="button"
+      class="ip__preview"
+      [disabled]="isLocked()"
+      (click)="browse()"
+      [attr.aria-label]="previewUrl() ? 'تغيير الصورة' : 'اختيار صورة'"
+    >
+      @if (previewUrl(); as url) {
+        <img [src]="url" alt="" (error)="pendingFile() ? null : onCurrentError()" />
+        <span class="ip__preview-hover" aria-hidden="true"><i class="fa-solid fa-camera-rotate"></i></span>
+      } @else {
+        <i class="fa-regular fa-image ip__placeholder" aria-hidden="true"></i>
+      }
+
+      @if (busy() || isValidating()) {
+        <span class="ip__overlay" aria-hidden="true"><span class="ip__spinner"></span></span>
+      }
+      @if (pendingFile() && !busy()) {
+        <span class="ip__badge">جديدة</span>
+      }
+    </button>
+
+    <div class="ip__body">
+      @if (busy()) {
+        <span class="ip__title">جارٍ رفع الصورة…</span>
+        <span class="ip__progress" role="progressbar" aria-label="جارٍ رفع الصورة"><span></span></span>
+      } @else if (isValidating()) {
+        <span class="ip__title">جارٍ فحص الصورة…</span>
+      } @else if (pendingFile()) {
+        <span class="ip__title" [title]="pendingFile()!.name">{{ pendingFile()!.name }}</span>
+        <span class="ip__meta">{{ pendingMeta() }} · تُرفع عند الحفظ</span>
+      } @else {
+        <span class="ip__title">{{ previewUrl() ? 'اسحب صورة جديدة أو اختر ملفًا' : 'اسحب الصورة هنا أو اختر ملفًا' }}</span>
+        <span class="ip__meta">{{ hint }}</span>
+      }
+
+      <div class="ip__actions">
+        <button type="button" class="ip__btn" [disabled]="isLocked()" (click)="browse()">
+          <i class="fa-solid fa-arrow-up-from-bracket"></i>
+          {{ previewUrl() ? 'تغيير' : 'اختيار صورة' }}
+        </button>
+        @if (pendingFile()) {
+          <button type="button" class="ip__btn ip__btn--ghost" [disabled]="isLocked()" (click)="discard()">
+            <i class="fa-solid fa-rotate-left"></i>
+            تراجع
+          </button>
+        }
+      </div>
+    </div>
+
+    <input #fileInput type="file" class="ip__input" [accept]="accept" (change)="onInputChange($event)" tabindex="-1" aria-hidden="true" />
+  </div>
+
+  <div class="ip__messages" aria-live="polite">
+    @if (shownError(); as err) {
+      <span class="ip__msg ip__msg--error"><i class="fa-solid fa-circle-exclamation"></i>{{ err }}</span>
+    } @else if (notice()) {
+      <span class="ip__msg ip__msg--info"><i class="fa-solid fa-wand-magic-sparkles"></i>{{ notice() }}</span>
+    }
+  </div>
+</div>

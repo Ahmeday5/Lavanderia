@@ -5,7 +5,12 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable, forkJoin, merge, of } from 'rxjs';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { PageRefreshService } from '../../core/services/page-refresh.service';
+import { RefreshButtonComponent } from '../../shared/components/refresh-button/refresh-button.component';
+import { PagedResponse } from '../../core/models/api-response.model';
 import { AuthService } from '../../core/auth/services/auth.service';
 import { CitiesService } from '../cities/services/cities.service';
 import { ServicesService } from '../services/services/services.service';
@@ -15,7 +20,7 @@ import { AppUsersService } from '../app-users/services/app-users.service';
   selector: 'app-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, RefreshButtonComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
@@ -33,18 +38,36 @@ export class DashboardComponent {
   protected readonly greeting = this.resolveGreeting();
 
   constructor() {
-    forkJoin({
-      cities: this.citiesService.list(),
-      services: this.servicesService.list(),
-      users: this.appUsersService.list(),
-    }).subscribe({
-      next: ({ cities, services, users }) => {
-        this.citiesCount.set(cities.length);
-        this.servicesCount.set(services.length);
-        this.usersCount.set(users.length);
+    // Initial load + every page refresh; `switchMap` drops a superseded load.
+    merge(of(undefined), inject(PageRefreshService).refreshes$)
+      .pipe(
+        tap(() => this.isLoading.set(true)),
+        switchMap(() => this.loadCounts()),
+        takeUntilDestroyed(),
+      )
+      .subscribe(({ cities, services, users }) => {
+        this.citiesCount.set(cities);
+        this.servicesCount.set(services);
+        this.usersCount.set(users);
         this.isLoading.set(false);
-      },
-      error: () => this.isLoading.set(false),
+      });
+  }
+
+  private loadCounts() {
+    // Only the totals are needed, so ask for a 1-row page and read `count`.
+    // Each stat degrades to 0 on its own — one failing endpoint must not
+    // blank the other cards (a bare forkJoin would error out entirely).
+    const countOf = (source: Observable<PagedResponse<unknown>>) =>
+      source.pipe(
+        map((page) => page.count),
+        catchError(() => of(0)),
+      );
+    const firstRow = { pageIndex: 1, pageSize: 1 };
+
+    return forkJoin({
+      cities: countOf(this.citiesService.list(firstRow)),
+      services: countOf(this.servicesService.list(firstRow)),
+      users: countOf(this.appUsersService.list(firstRow)),
     });
   }
 

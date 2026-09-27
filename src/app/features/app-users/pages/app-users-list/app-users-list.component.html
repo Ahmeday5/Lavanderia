@@ -15,7 +15,7 @@
       </div>
 
       <div class="aup-hero__stat">
-        <span class="aup-hero__stat-value">{{ users().length }}</span>
+        <span class="aup-hero__stat-value">{{ list.count() }}</span>
         <span class="aup-hero__stat-label">مستخدم</span>
       </div>
     </div>
@@ -29,15 +29,17 @@
         type="text"
         class="aup-search__input"
         placeholder="ابحث بالبريد الإلكتروني..."
-        [ngModel]="searchTerm()"
-        (ngModelChange)="searchTerm.set($event)"
+        [ngModel]="list.searchInput()"
+        (ngModelChange)="list.setSearch($event)"
       />
-      @if (searchTerm()) {
-        <button type="button" class="aup-search__clear" (click)="searchTerm.set('')" aria-label="مسح البحث">
+      @if (list.searchInput()) {
+        <button type="button" class="aup-search__clear" (click)="list.clearSearch()" aria-label="مسح البحث">
           <i class="fa-solid fa-xmark"></i>
         </button>
       }
     </div>
+
+    <app-refresh-button />
 
     <button type="button" class="aup-add-btn" (click)="openCreateModal()">
       <i class="fa-solid fa-user-plus"></i>
@@ -46,24 +48,36 @@
   </div>
 
   <!-- ── Content ── -->
-  @if (isLoading()) {
+  @if (list.isLoading()) {
     <div class="aup-grid">
       @for (i of [1, 2, 3, 4]; track i) {
         <div class="aup-skeleton"></div>
       }
     </div>
-  } @else if (filteredUsers().length === 0) {
+  } @else if (list.error()) {
+    <div class="aup-empty" role="alert">
+      <div class="aup-empty__icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="aup-empty__title">تعذّر تحميل المستخدمين</div>
+      <div class="aup-empty__subtitle">{{ list.error()?.message }}</div>
+      <button type="button" class="aup-add-btn" (click)="list.reload()">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>إعادة المحاولة</span>
+      </button>
+    </div>
+  } @else if (list.items().length === 0) {
     <div class="aup-empty">
       <div class="aup-empty__icon">
         <i class="fa-solid fa-user-shield"></i>
       </div>
       <div class="aup-empty__title">
-        {{ searchTerm() ? 'لا توجد نتائج مطابقة' : 'لا يوجد مستخدمون بعد' }}
+        {{ list.search() ? 'لا توجد نتائج مطابقة' : 'لا يوجد مستخدمون بعد' }}
       </div>
       <div class="aup-empty__subtitle">
-        {{ searchTerm() ? 'جرّب مصطلح بحث آخر' : 'أضف أول مستخدم للتحكم في لوحة التحكم' }}
+        {{ list.search() ? 'جرّب مصطلح بحث آخر' : 'أضف أول مستخدم للتحكم في لوحة التحكم' }}
       </div>
-      @if (!searchTerm()) {
+      @if (!list.search()) {
         <button type="button" class="aup-add-btn" (click)="openCreateModal()">
           <i class="fa-solid fa-user-plus"></i>
           <span>إضافة مستخدم</span>
@@ -72,7 +86,7 @@
     </div>
   } @else {
     <div class="aup-grid">
-      @for (user of filteredUsers(); track user.id; let i = $index) {
+      @for (user of list.items(); track user.id; let i = $index) {
         <article class="aup-card" [style.animation-delay.ms]="i * 35">
           <div class="aup-card__avatar">{{ initials(user.email) }}</div>
 
@@ -104,11 +118,21 @@
       }
     </div>
   }
+
+  <app-pagination
+    [pageIndex]="list.pageIndex()"
+    [pageSize]="list.pageSize()"
+    [count]="list.count()"
+    [totalPages]="list.totalPages()"
+    [disabled]="list.isLoading()"
+    (pageChange)="list.goToPage($event)"
+    (pageSizeChange)="list.setPageSize($event)"
+  />
 </div>
 
 <app-app-user-form-modal
   [open]="isModalOpen()"
   [user]="editingUser()"
   (closed)="closeModal()"
-  (saved)="onSaved($event)"
+  (saved)="onSaved()"
 />
