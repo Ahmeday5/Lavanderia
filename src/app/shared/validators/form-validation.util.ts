@@ -1,4 +1,5 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+import { isHtmlBlank } from '../utils/html-content.util';
 
 /**
  * Maps a control's first failing validator into a human-readable message.
@@ -111,6 +112,16 @@ export function phoneValidator(): ValidatorFn {
       ? null
       : { phone: true };
   };
+}
+
+/**
+ * `Validators.required` for HTML controls: markup with no visible text
+ * (`<p><br></p>`, stray tags, only whitespace) counts as empty. Reports the
+ * standard `required` key so `app-form-error` messages stay consistent.
+ */
+export function richTextRequiredValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null =>
+    isHtmlBlank(control.value as string | null) ? { required: true } : null;
 }
 
 /**

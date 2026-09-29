@@ -1,0 +1,128 @@
+@switch (resource.status()) {
+  @case ('loading') {
+    <div class="sp" aria-busy="true" aria-label="جارٍ تحميل سياسة الخصوصية">
+      <div class="sp-card">
+        <div class="sp-skeleton pp-skel-head"></div>
+        <div class="sp-skeleton pp-skel-editor"></div>
+      </div>
+    </div>
+  }
+
+  @case ('error') {
+    <div class="sp-state" role="alert">
+      <div class="sp-state__icon"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></div>
+      <div class="sp-state__title">تعذّر تحميل سياسة الخصوصية</div>
+      <div class="sp-state__subtitle">{{ resource.loadError()?.message || 'تحقق من اتصالك ثم أعد المحاولة' }}</div>
+      <button type="button" class="sp-btn sp-btn--brand" (click)="resource.reload()">
+        <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+        إعادة المحاولة
+      </button>
+    </div>
+  }
+
+  @case ('ready') {
+    <form class="sp" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <section class="sp-card" aria-labelledby="pp-title">
+        <div class="sp-card__head">
+          <div class="sp-card__icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></div>
+          <div class="sp-card__titles">
+            <h2 class="sp-card__title" id="pp-title">سياسة الخصوصية</h2>
+            <p class="sp-card__subtitle">
+              اكتب المحتوى ونسّقه كما في Word — يُحفظ كما هو ويظهر للمستخدمين داخل التطبيق
+            </p>
+          </div>
+
+          @if (resource.saved()?.updatedAt) {
+            <span class="sp-meta" [title]="lastUpdated()">
+              <i class="fa-regular fa-clock" aria-hidden="true"></i>
+              آخر تحديث: {{ lastUpdated() }}
+            </span>
+          }
+        </div>
+
+        <div class="pp-modes" role="tablist" aria-label="طريقة العرض">
+          <button
+            type="button"
+            role="tab"
+            class="pp-mode"
+            [class.pp-mode--active]="mode() === 'edit'"
+            [attr.aria-selected]="mode() === 'edit'"
+            (click)="setMode('edit')"
+          >
+            <i class="fa-solid fa-pen-nib" aria-hidden="true"></i>
+            تحرير
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="pp-mode"
+            [class.pp-mode--active]="mode() === 'preview'"
+            [attr.aria-selected]="mode() === 'preview'"
+            (click)="setMode('preview')"
+          >
+            <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i>
+            معاينة في التطبيق
+          </button>
+        </div>
+
+        @if (saveErrorMessage(); as message) {
+          <div class="sp-alert" role="alert">
+            <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+            <span>{{ message }}</span>
+          </div>
+        }
+
+        <!-- Kept alive (hidden) in preview mode so undo history and scroll survive. -->
+        <div [hidden]="mode() !== 'edit'" role="tabpanel">
+          <app-rich-text-editor
+            formControlName="content"
+            placeholder="اكتب سياسة الخصوصية هنا… استخدم العناوين والقوائم لتنظيم المحتوى"
+            ariaLabel="محتوى سياسة الخصوصية"
+            [invalid]="form.controls.content.invalid && form.controls.content.touched"
+          />
+          <app-form-error [control]="form.controls.content" label="محتوى سياسة الخصوصية" />
+        </div>
+
+        @if (mode() === 'preview') {
+          <div class="pp-preview" role="tabpanel">
+            <div class="pp-phone">
+              <div class="pp-phone__notch" aria-hidden="true"></div>
+              <div class="pp-phone__bar">
+                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                سياسة الخصوصية
+              </div>
+              <article class="pp-doc" [innerHTML]="previewHtml()"></article>
+            </div>
+          </div>
+        }
+      </section>
+
+      <div class="sp-bar">
+        <span class="sp-bar__status" [class.sp-bar__status--dirty]="isDirty()" aria-live="polite">
+          <span class="sp-bar__pulse" aria-hidden="true"></span>
+          {{ isDirty() ? 'لديك تغييرات غير محفوظة' : 'كل التغييرات محفوظة' }}
+          <kbd class="sp-kbd">Ctrl + S</kbd>
+        </span>
+
+        <button
+          type="button"
+          class="sp-btn sp-btn--ghost"
+          (click)="onDiscard()"
+          [disabled]="!isDirty() || resource.isSaving()"
+        >
+          <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+          تجاهل التغييرات
+        </button>
+        <button type="submit" class="sp-btn sp-btn--brand" [disabled]="!isDirty() || resource.isSaving()">
+          @if (resource.isSaving()) {
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            جارٍ الحفظ…
+          } @else {
+            <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+            حفظ ونشر
+          }
+        </button>
+      </div>
+    </form>
+  }
+}

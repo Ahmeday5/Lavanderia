@@ -1,0 +1,299 @@
+// Shared building blocks for settings pages (card, save bar, states).
+// `@use` it at the top of a settings page stylesheet — rules are emitted into,
+// and encapsulated by, each page that uses them.
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.sp {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: sp-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ═══════════════ CARD ═══════════════ */
+.sp-card {
+  border-radius: 18px;
+  background: var(--bg2);
+  border: 1px solid var(--brd);
+  box-shadow: 0 1px 2px rgba(10, 42, 74, 0.04);
+  padding: 22px 24px;
+}
+
+.sp-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.sp-card__icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--bl-l);
+  color: var(--bl);
+  font-size: 16px;
+}
+
+.sp-card__titles {
+  flex: 1;
+  min-width: 200px;
+}
+
+.sp-card__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--txt);
+  margin: 0;
+}
+
+.sp-card__subtitle {
+  font-size: 11.5px;
+  color: var(--txt2);
+  line-height: 1.7;
+  margin: 3px 0 0;
+}
+
+.sp-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--bg3);
+  font-size: 10.5px;
+  color: var(--txt2);
+  white-space: nowrap;
+}
+
+/* ═══════════════ SAVE BAR ═══════════════ */
+.sp-bar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--bg2);
+  border: 1px solid var(--brd);
+  box-shadow: 0 16px 36px -18px rgba(10, 42, 74, 0.35);
+}
+
+.sp-bar__status {
+  flex: 1;
+  min-width: 180px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--txt3);
+
+  &--dirty {
+    color: var(--am);
+  }
+}
+
+.sp-bar__pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gr);
+
+  .sp-bar__status--dirty & {
+    background: var(--am);
+    box-shadow: 0 0 0 0 rgba(133, 79, 11, 0.4);
+    animation: sp-pulse 1.6s ease-out infinite;
+  }
+}
+
+.sp-kbd {
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--brd2);
+  background: var(--bg3);
+  font: 600 10px var(--font-base);
+  color: var(--txt2);
+  direction: ltr;
+
+  @media (max-width: 640px) {
+    display: none;
+  }
+}
+
+/* ═══════════════ BUTTONS ═══════════════ */
+.sp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 11px;
+  font-family: var(--font-base);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  i {
+    font-size: 11px;
+  }
+
+  &--ghost {
+    border: 1px solid var(--brd2);
+    background: var(--bg2);
+    color: var(--txt2);
+
+    &:hover:not(:disabled) {
+      background: var(--bg3);
+      color: var(--txt);
+    }
+  }
+
+  &--brand {
+    border: none;
+    background: var(--brand-gradient);
+    color: var(--brand-white);
+    box-shadow: 0 10px 22px -10px rgba(10, 42, 74, 0.55);
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bl);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+/* ═══════════════ STATES ═══════════════ */
+.sp-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  border-radius: 12px;
+  background: var(--re-l);
+  color: var(--re);
+  font-size: 11.5px;
+  line-height: 1.6;
+
+  i {
+    margin-top: 3px;
+  }
+}
+
+.sp-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 64px 24px;
+  border-radius: 18px;
+  border: 1.5px dashed var(--brd2);
+  background: var(--bg2);
+  text-align: center;
+}
+
+.sp-state__icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--re-l);
+  color: var(--re);
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.sp-state__title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--txt);
+}
+
+.sp-state__subtitle {
+  font-size: 11.5px;
+  color: var(--txt2);
+  margin-bottom: 12px;
+}
+
+.sp-skeleton {
+  border-radius: 12px;
+  background: linear-gradient(100deg, var(--bg3) 30%, var(--brd) 50%, var(--bg3) 70%);
+  background-size: 200% 100%;
+  animation: sp-shimmer 1.4s ease-in-out infinite;
+}
+
+/* ═══════════════ ANIMATIONS ═══════════════ */
+@keyframes sp-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sp-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes sp-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(133, 79, 11, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(133, 79, 11, 0);
+  }
+}
+
+@media (max-width: 640px) {
+  .sp-card {
+    padding: 18px 16px;
+  }
+
+  .sp-bar .sp-btn {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sp,
+  .sp-skeleton,
+  .sp-bar__pulse {
+    animation: none !important;
+  }
+}

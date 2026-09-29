@@ -1,0 +1,38 @@
+<div
+  class="rte"
+  [class.rte--ready]="ready()"
+  [class.rte--invalid]="invalid()"
+  [class.rte--disabled]="disabled()"
+  [style.--rte-min-height.px]="minHeight()"
+>
+  @if (!ready()) {
+    <div class="rte__skeleton" aria-hidden="true">
+      <div class="rte__skeleton-bar"></div>
+      <div class="rte__skeleton-body"></div>
+    </div>
+  }
+
+  <quill-editor
+    class="rte__editor"
+    theme="snow"
+    format="html"
+    [modules]="modules"
+    [formats]="formats"
+    [beforeRender]="beforeRender"
+    [valueGetter]="valueGetter"
+    [placeholder]="placeholder()"
+    [readOnly]="disabled()"
+    [ngModel]="value()"
+    (ngModelChange)="onInput($event)"
+    (onBlur)="onBlur()"
+    (onEditorCreated)="onEditorCreated($event)"
+    linkPlaceholder="https://example.com"
+    bounds="self"
+  />
+
+  <div class="rte__footer" aria-live="polite">
+    <span><i class="fa-regular fa-file-lines" aria-hidden="true"></i> {{ stats().words }} كلمة</span>
+    <span class="rte__dot" aria-hidden="true"></span>
+    <span>{{ stats().chars }} حرف</span>
+  </div>
+</div>

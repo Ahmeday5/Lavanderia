@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/guards/auth.guard';
 import { guestGuard } from './core/auth/guards/guest.guard';
+import { roleGuard } from './core/auth/guards/role.guard';
 
 export const routes: Routes = [
   // Auth area — only reachable when NOT signed in
@@ -69,6 +70,13 @@ export const routes: Routes = [
         path: 'drivers',
         loadChildren: () =>
           import('./features/drivers/drivers.routes').then((m) => m.driversRoutes),
+      },
+      {
+        path: 'settings',
+        // Mirrors the nav item's `roles` — hiding a link is not access control.
+        canActivate: [roleGuard(['Admin'])],
+        loadChildren: () =>
+          import('./features/settings/settings.routes').then((m) => m.settingsRoutes),
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],

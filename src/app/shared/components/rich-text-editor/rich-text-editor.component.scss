@@ -1,0 +1,421 @@
+/*
+ * Unencapsulated (Quill renders its own DOM) — every rule is scoped under
+ * `.rte`. Covers: brand look, RTL layout (Quill's own RTL rules are class
+ * based and don't apply to our inline-style formats), Arabic UI labels.
+ */
+
+app-rich-text-editor {
+  display: block;
+}
+
+.rte {
+  --rte-min-height: 380px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--brd2);
+  border-radius: 14px;
+  background: var(--bg2);
+  overflow: visible;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus-within {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(21, 104, 184, 0.12);
+  }
+
+  &--invalid,
+  &--invalid:focus-within {
+    border-color: var(--re);
+    box-shadow: 0 0 0 3px rgba(163, 45, 45, 0.1);
+  }
+
+  &--disabled {
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  /* ── Host of Quill's toolbar + container ── */
+  .rte__editor {
+    display: flex;
+    flex-direction: column;
+    visibility: hidden;
+  }
+
+  &--ready .rte__editor {
+    visibility: visible;
+  }
+
+  /* ── Toolbar ── */
+  .ql-toolbar.ql-snow {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 4px;
+    padding: 8px 10px;
+    border: none;
+    border-bottom: 1px solid var(--brd);
+    border-radius: 14px 14px 0 0;
+    background: var(--bg3);
+    font-family: var(--font-base);
+    direction: rtl;
+
+    .ql-formats {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      margin: 0;
+      padding-inline-end: 6px;
+      border-inline-end: 1px solid var(--brd);
+
+      &:last-child {
+        border-inline-end: none;
+      }
+    }
+
+    button {
+      float: none;
+      width: 30px;
+      height: 30px;
+      padding: 6px;
+      border-radius: 8px;
+      transition: background 0.12s;
+
+      &:hover,
+      &:focus-visible {
+        background: var(--bg2);
+      }
+
+      &.ql-active {
+        background: var(--bl-l);
+      }
+    }
+
+    button:hover .ql-stroke,
+    button.ql-active .ql-stroke,
+    .ql-picker-label:hover .ql-stroke,
+    .ql-picker-label.ql-active .ql-stroke {
+      stroke: var(--bl);
+    }
+
+    button:hover .ql-fill,
+    button.ql-active .ql-fill,
+    .ql-picker-label:hover .ql-fill,
+    .ql-picker-label.ql-active .ql-fill {
+      fill: var(--bl);
+    }
+
+    button:hover,
+    button.ql-active,
+    .ql-picker-label:hover,
+    .ql-picker-label.ql-active,
+    .ql-picker-item:hover,
+    .ql-picker-item.ql-selected {
+      color: var(--bl);
+    }
+  }
+
+  /* ── Pickers (RTL: arrow on the left, label on the right) ── */
+  .ql-snow .ql-picker {
+    height: 30px;
+    font-size: 12px;
+    color: var(--txt2);
+
+    &.ql-header {
+      width: 104px;
+    }
+
+    &.ql-size {
+      width: 86px;
+    }
+  }
+
+  .ql-snow .ql-picker:not(.ql-color-picker):not(.ql-icon-picker) {
+    .ql-picker-label {
+      padding-inline: 8px 20px;
+      border-radius: 8px;
+      direction: rtl;
+      text-align: start;
+    }
+
+    svg {
+      right: auto;
+      left: 2px;
+    }
+  }
+
+  .ql-snow .ql-picker-label {
+    border-radius: 8px;
+  }
+
+  .ql-snow .ql-picker.ql-expanded .ql-picker-label {
+    border-color: var(--brd2);
+    background: var(--bg2);
+  }
+
+  .ql-snow .ql-picker-options {
+    z-index: 3;
+    border: 1px solid var(--brd) !important;
+    border-radius: 10px;
+    box-shadow: 0 12px 28px -10px rgba(10, 42, 74, 0.28) !important;
+    direction: rtl;
+    text-align: start;
+  }
+
+  /* Arabic labels (Quill renders them through CSS `content`). */
+  .ql-snow .ql-picker.ql-header {
+    .ql-picker-label::before,
+    .ql-picker-item::before {
+      content: 'نص عادي';
+    }
+    [data-value='1']::before {
+      content: 'عنوان رئيسي' !important;
+    }
+    [data-value='2']::before {
+      content: 'عنوان فرعي' !important;
+    }
+    [data-value='3']::before {
+      content: 'عنوان صغير' !important;
+    }
+  }
+
+  .ql-snow .ql-picker.ql-size {
+    .ql-picker-label::before,
+    .ql-picker-item::before {
+      content: 'متوسط';
+    }
+    [data-value='13px']::before {
+      content: 'صغير' !important;
+    }
+    [data-value='18px']::before {
+      content: 'كبير' !important;
+    }
+    [data-value='24px']::before {
+      content: 'كبير جدًا' !important;
+    }
+    .ql-picker-item[data-value='13px']::before {
+      font-size: 13px;
+    }
+    .ql-picker-item[data-value='18px']::before {
+      font-size: 18px;
+    }
+    .ql-picker-item[data-value='24px']::before {
+      font-size: 22px;
+    }
+  }
+
+  /* ── Link tooltip ── */
+  .ql-snow .ql-tooltip {
+    z-index: 4;
+    direction: rtl;
+    border: 1px solid var(--brd);
+    border-radius: 10px;
+    box-shadow: 0 12px 28px -10px rgba(10, 42, 74, 0.28);
+    font-family: var(--font-base);
+    color: var(--txt);
+
+    &::before {
+      content: 'الرابط:';
+      margin-inline-end: 8px;
+      margin-right: 0;
+    }
+
+    &[data-mode='link']::before {
+      content: 'أدخل الرابط:';
+    }
+
+    input[type='text'] {
+      direction: ltr;
+      height: 30px;
+      border-radius: 8px;
+      border-color: var(--brd2);
+      font-family: var(--font-base);
+    }
+
+    a.ql-action::after {
+      content: 'تعديل';
+      border-right: none;
+      border-inline-end: 1px solid var(--brd2);
+      margin-left: 0;
+      padding-inline: 8px;
+    }
+
+    a.ql-remove::before {
+      content: 'إزالة';
+      margin-left: 0;
+      margin-inline-start: 8px;
+    }
+
+    &.ql-editing a.ql-action::after {
+      content: 'حفظ';
+      border-inline-end: none;
+    }
+
+    a {
+      color: var(--bl);
+    }
+  }
+
+  /* ── Writing surface ── */
+  .ql-container.ql-snow {
+    border: none;
+    font-family: var(--font-base);
+    font-size: 14px;
+  }
+
+  // `.ql-snow` prefix: outranks the theme sheet, which loads after ours.
+  .ql-snow .ql-editor {
+    min-height: var(--rte-min-height);
+    padding: 22px 26px;
+    direction: rtl;
+    text-align: start;
+    line-height: 1.9;
+    color: var(--txt);
+
+    &.ql-blank::before {
+      inset-inline: 26px;
+      font-style: normal;
+      color: var(--txt3);
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-weight: 800;
+      line-height: 1.5;
+      margin: 0.6em 0 0.3em;
+    }
+
+    h1 {
+      font-size: 1.7em;
+    }
+    h2 {
+      font-size: 1.4em;
+    }
+    h3 {
+      font-size: 1.15em;
+    }
+
+    a {
+      color: var(--bl);
+    }
+
+    blockquote {
+      margin: 0.6em 0;
+      padding-inline-start: 14px;
+      padding-left: 0;
+      border-left: none;
+      border-inline-start: 4px solid var(--bl);
+      color: var(--txt2);
+    }
+
+    ol {
+      padding-left: 0;
+      padding-inline-start: 1.5em;
+    }
+
+    li {
+      padding-left: 0;
+      padding-inline-start: 1.5em;
+
+      > .ql-ui::before {
+        margin-left: 0.3em;
+        margin-right: -1.5em;
+        text-align: left;
+      }
+    }
+
+    // Quill's nesting indents are left-padding only; mirror them for RTL.
+    // `:not(...)` matches Quill's selector specificity so these win.
+    // Five levels is plenty for policy documents (Quill allows up to 8).
+    @for $i from 1 through 5 {
+      .ql-indent-#{$i}:not(.ql-direction-rtl) {
+        padding-left: 0;
+        padding-inline-start: #{$i * 3}em;
+      }
+
+      li.ql-indent-#{$i}:not(.ql-direction-rtl) {
+        padding-left: 0;
+        padding-inline-start: #{$i * 3 + 1.5}em;
+      }
+    }
+  }
+
+  /* ── Footer / stats ── */
+  .rte__footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-top: 1px solid var(--brd);
+    border-radius: 0 0 14px 14px;
+    background: var(--bg3);
+    font-size: 10.5px;
+    color: var(--txt3);
+
+    i {
+      margin-inline-end: 4px;
+    }
+  }
+
+  .rte__dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--txt3);
+  }
+
+  /* ── Loading skeleton (until stylesheet + Quill are ready) ── */
+  .rte__skeleton {
+    position: absolute;
+    inset: 0 0 37px;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    border-radius: 14px 14px 0 0;
+    overflow: hidden;
+  }
+
+  .rte__skeleton-bar {
+    height: 47px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--brd);
+  }
+
+  .rte__skeleton-body {
+    flex: 1;
+    margin: 22px 26px;
+    border-radius: 8px;
+    background: linear-gradient(100deg, var(--bg3) 30%, var(--brd) 50%, var(--bg3) 70%);
+    background-size: 200% 100%;
+    animation: rte-shimmer 1.4s ease-in-out infinite;
+  }
+
+  &:not(.rte--ready) .rte__editor {
+    min-height: calc(var(--rte-min-height) + 47px);
+  }
+}
+
+@keyframes rte-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .rte .ql-editor {
+    padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rte__skeleton-body {
+    animation: none;
+  }
+}

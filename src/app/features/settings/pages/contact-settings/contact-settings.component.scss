@@ -1,0 +1,185 @@
+@use '../../styles/settings-page';
+
+.cs-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+  align-items: start;
+
+  @media (max-width: 992px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ═══════════════ FIELDS ═══════════════ */
+.cs-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 18px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+
+  @media (max-width: 640px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.cs-field--wide {
+  grid-column: 1 / -1;
+}
+
+.cs-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--txt);
+}
+
+.cs-required {
+  color: var(--re);
+}
+
+.cs-optional {
+  font-weight: 400;
+  color: var(--txt3);
+}
+
+.cs-input {
+  position: relative;
+
+  input {
+    width: 100%;
+    height: 44px;
+    // Physical, not logical: the input is `dir="ltr"` (numbers/emails) while
+    // the icon sits on the right of the RTL page.
+    padding: 0 40px 0 14px;
+    border-radius: 12px;
+    border: 1px solid var(--brd2);
+    background: var(--bg2);
+    font-family: var(--font-base);
+    font-size: 13px;
+    color: var(--txt);
+    text-align: right;
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(21, 104, 184, 0.12);
+    }
+
+    &::placeholder {
+      color: var(--txt3);
+    }
+
+    &:disabled {
+      background: var(--bg3);
+      cursor: not-allowed;
+    }
+  }
+
+  &--invalid input,
+  &--invalid input:focus {
+    border-color: var(--re);
+    box-shadow: 0 0 0 3px rgba(163, 45, 45, 0.1);
+  }
+}
+
+.cs-input__icon {
+  position: absolute;
+  inset-inline-start: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12.5px;
+  color: var(--txt3);
+  pointer-events: none;
+  transition: color 0.15s;
+
+  .cs-input:focus-within & {
+    color: var(--brand);
+  }
+}
+
+/* ═══════════════ PREVIEW ═══════════════ */
+.cs-preview {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--brand-gradient);
+  color: var(--brand-white);
+  box-shadow: 0 18px 36px -20px rgba(10, 42, 74, 0.6);
+
+  @media (max-width: 992px) {
+    position: static;
+  }
+}
+
+.cs-preview__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.cs-preview__item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--bg2);
+  color: var(--txt);
+}
+
+.cs-preview__label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--txt3);
+}
+
+.cs-preview__empty {
+  font-size: 11.5px;
+  color: var(--txt3);
+  font-style: italic;
+}
+
+.cs-preview__mail {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--bl);
+  text-decoration: none;
+  word-break: break-all;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* ═══════════════ SKELETON ═══════════════ */
+.cs-skel-head {
+  height: 44px;
+  width: 60%;
+  margin-bottom: 22px;
+}
+
+.cs-skel-field {
+  height: 64px;
+  margin-bottom: 14px;
+}
+
+.cs-skel-preview {
+  height: 300px;
+  border-radius: 18px;
+}

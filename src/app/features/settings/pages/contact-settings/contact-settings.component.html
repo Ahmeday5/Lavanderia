@@ -1,0 +1,180 @@
+@switch (resource.status()) {
+  @case ('loading') {
+    <div class="sp" aria-busy="true" aria-label="جارٍ تحميل بيانات التواصل">
+      <div class="cs-layout">
+        <div class="sp-card">
+          <div class="sp-skeleton cs-skel-head"></div>
+          @for (i of [1, 2, 3]; track i) {
+            <div class="sp-skeleton cs-skel-field"></div>
+          }
+        </div>
+        <div class="sp-skeleton cs-skel-preview"></div>
+      </div>
+    </div>
+  }
+
+  @case ('error') {
+    <div class="sp-state" role="alert">
+      <div class="sp-state__icon"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></div>
+      <div class="sp-state__title">تعذّر تحميل بيانات التواصل</div>
+      <div class="sp-state__subtitle">{{ resource.loadError()?.message || 'تحقق من اتصالك ثم أعد المحاولة' }}</div>
+      <button type="button" class="sp-btn sp-btn--brand" (click)="resource.reload()">
+        <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+        إعادة المحاولة
+      </button>
+    </div>
+  }
+
+  @case ('ready') {
+    <form class="sp" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div class="cs-layout">
+        <!-- ── Form ── -->
+        <section class="sp-card" aria-labelledby="cs-title">
+          <div class="sp-card__head">
+            <div class="sp-card__icon"><i class="fa-solid fa-headset" aria-hidden="true"></i></div>
+            <div class="sp-card__titles">
+              <h2 class="sp-card__title" id="cs-title">بيانات التواصل مع الدعم</h2>
+              <p class="sp-card__subtitle">
+                تظهر هذه البيانات للعملاء والسائقين في شاشة "تواصل معنا" داخل التطبيق
+              </p>
+            </div>
+          </div>
+
+          @if (saveErrorMessage(); as message) {
+            <div class="sp-alert" role="alert">
+              <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+              <span>{{ message }}</span>
+            </div>
+          }
+
+          <fieldset class="cs-fields" [disabled]="resource.isSaving()">
+            <div class="cs-field">
+              <label class="cs-label" for="cs-phone1">
+                رقم الهاتف الرئيسي <span class="cs-required" aria-hidden="true">*</span>
+              </label>
+              <div class="cs-input" [class.cs-input--invalid]="form.controls.phoneNumber1.invalid && form.controls.phoneNumber1.touched">
+                <i class="fa-solid fa-phone cs-input__icon" aria-hidden="true"></i>
+                <input
+                  id="cs-phone1"
+                  type="tel"
+                  inputmode="tel"
+                  dir="ltr"
+                  formControlName="phoneNumber1"
+                  placeholder="0912345678"
+                  autocomplete="off"
+                  (blur)="normalizePhone('phoneNumber1')"
+                />
+              </div>
+              <app-form-error [control]="form.controls.phoneNumber1" label="رقم الهاتف الرئيسي" />
+            </div>
+
+            <div class="cs-field">
+              <label class="cs-label" for="cs-phone2">
+                رقم هاتف إضافي <span class="cs-optional">(اختياري)</span>
+              </label>
+              <div class="cs-input" [class.cs-input--invalid]="form.controls.phoneNumber2.invalid && form.controls.phoneNumber2.touched">
+                <i class="fa-solid fa-mobile-screen cs-input__icon" aria-hidden="true"></i>
+                <input
+                  id="cs-phone2"
+                  type="tel"
+                  inputmode="tel"
+                  dir="ltr"
+                  formControlName="phoneNumber2"
+                  placeholder="0921234567"
+                  autocomplete="off"
+                  (blur)="normalizePhone('phoneNumber2')"
+                />
+              </div>
+              <app-form-error [control]="form.controls.phoneNumber2" label="رقم الهاتف الإضافي" />
+            </div>
+
+            <div class="cs-field cs-field--wide">
+              <label class="cs-label" for="cs-email">
+                البريد الإلكتروني <span class="cs-required" aria-hidden="true">*</span>
+              </label>
+              <div class="cs-input" [class.cs-input--invalid]="form.controls.email.invalid && form.controls.email.touched">
+                <i class="fa-solid fa-envelope cs-input__icon" aria-hidden="true"></i>
+                <input
+                  id="cs-email"
+                  type="email"
+                  inputmode="email"
+                  dir="ltr"
+                  formControlName="email"
+                  placeholder="support@example.com"
+                  autocomplete="off"
+                />
+              </div>
+              <app-form-error [control]="form.controls.email" label="البريد الإلكتروني" />
+            </div>
+          </fieldset>
+        </section>
+
+        <!-- ── Live preview ── -->
+        <aside class="cs-preview" aria-label="معاينة كما تظهر في التطبيق">
+          <div class="cs-preview__head">
+            <i class="fa-regular fa-eye" aria-hidden="true"></i>
+            معاينة مباشرة
+          </div>
+
+          <div class="cs-preview__item">
+            <span class="cs-preview__label">الهاتف الرئيسي</span>
+            @if (draft().phoneNumber1) {
+              <app-phone-actions [phone]="draft().phoneNumber1" />
+            } @else {
+              <span class="cs-preview__empty">لم يُحدَّد بعد</span>
+            }
+          </div>
+
+          <div class="cs-preview__item">
+            <span class="cs-preview__label">هاتف إضافي</span>
+            @if (draft().phoneNumber2) {
+              <app-phone-actions [phone]="draft().phoneNumber2" />
+            } @else {
+              <span class="cs-preview__empty">غير مضاف</span>
+            }
+          </div>
+
+          <div class="cs-preview__item">
+            <span class="cs-preview__label">البريد الإلكتروني</span>
+            @if (draft().email) {
+              <a class="cs-preview__mail" [href]="'mailto:' + draft().email" dir="ltr">
+                <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                {{ draft().email }}
+              </a>
+            } @else {
+              <span class="cs-preview__empty">لم يُحدَّد بعد</span>
+            }
+          </div>
+        </aside>
+      </div>
+
+      <!-- ── Save bar ── -->
+      <div class="sp-bar">
+        <span class="sp-bar__status" [class.sp-bar__status--dirty]="isDirty()" aria-live="polite">
+          <span class="sp-bar__pulse" aria-hidden="true"></span>
+          {{ isDirty() ? 'لديك تغييرات غير محفوظة' : 'كل التغييرات محفوظة' }}
+          <kbd class="sp-kbd">Ctrl + S</kbd>
+        </span>
+
+        <button
+          type="button"
+          class="sp-btn sp-btn--ghost"
+          (click)="onDiscard()"
+          [disabled]="!isDirty() || resource.isSaving()"
+        >
+          <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+          تجاهل التغييرات
+        </button>
+        <button type="submit" class="sp-btn sp-btn--brand" [disabled]="!isDirty() || resource.isSaving()">
+          @if (resource.isSaving()) {
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            جارٍ الحفظ…
+          } @else {
+            <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+            حفظ التغييرات
+          }
+        </button>
+      </div>
+    </form>
+  }
+}

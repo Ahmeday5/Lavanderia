@@ -1,0 +1,33 @@
+<div class="st">
+  <header class="st-hero">
+    <div class="st-hero__glow" aria-hidden="true"></div>
+    <span class="st-hero__eyebrow">
+      <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+      إعدادات المنصّة
+    </span>
+    <h1 class="st-hero__title">الإعدادات</h1>
+    <p class="st-hero__subtitle">
+      تحكّم في المحتوى وبيانات الدعم التي يراها العملاء والسائقون داخل التطبيقات
+    </p>
+  </header>
+
+  <nav class="st-tabs" aria-label="أقسام الإعدادات">
+    @for (tab of tabs; track tab.route) {
+      <a
+        class="st-tab"
+        [routerLink]="tab.route"
+        routerLinkActive="st-tab--active"
+        #rla="routerLinkActive"
+        [attr.aria-current]="rla.isActive ? 'page' : null"
+      >
+        <span class="st-tab__icon"><i class="fa-solid {{ tab.icon }}" aria-hidden="true"></i></span>
+        <span class="st-tab__text">
+          <span class="st-tab__label">{{ tab.label }}</span>
+          <span class="st-tab__hint">{{ tab.hint }}</span>
+        </span>
+      </a>
+    }
+  </nav>
+
+  <router-outlet />
+</div>

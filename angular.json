@@ -35,9 +35,15 @@
             "styles": [
               "node_modules/bootstrap/dist/css/bootstrap.rtl.min.css",
               "node_modules/@fortawesome/fontawesome-free/css/all.min.css",
-              "src/styles.scss"
+              "src/styles.scss",
+              {
+                "input": "node_modules/quill/dist/quill.snow.css",
+                "bundleName": "quill-snow",
+                "inject": false
+              }
             ],
             "scripts": [],
+            "allowedCommonJsDependencies": ["quill-delta"],
             "optimization": {
               "scripts": true,
               "styles": { "minify": true, "inlineCritical": true },
