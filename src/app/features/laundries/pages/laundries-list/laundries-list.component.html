@@ -46,7 +46,19 @@
       }
     </div>
 
-    <app-refresh-button />
+    <div class="lp-toolbar__actions">
+      <button
+        type="button"
+        class="lp-tool-btn"
+        aria-haspopup="dialog"
+        title="الرسوم الثابتة المطبّقة عندما تكون مسافة التوصيل أقل من كيلومتر واحد"
+        (click)="isDeliverySettingsOpen.set(true)"
+      >
+        <i class="fa-solid fa-truck-fast" aria-hidden="true"></i>
+        <span>الحد الأدنى للتوصيل</span>
+      </button>
+      <app-refresh-button />
+    </div>
   </div>
 
   <!-- ── Content ── -->
@@ -162,3 +174,7 @@
     (pageSizeChange)="list.setPageSize($event)"
   />
 </div>
+
+@if (isDeliverySettingsOpen()) {
+  <app-delivery-settings-modal (closed)="isDeliverySettingsOpen.set(false)" />
+}

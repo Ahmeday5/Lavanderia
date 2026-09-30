@@ -1,5 +1,7 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+import { APP_CURRENCY } from '../../core/constants/currency.constants';
 import { isHtmlBlank } from '../utils/html-content.util';
+import { parseAmount } from '../utils/number-parse.util';
 
 /**
  * Maps a control's first failing validator into a human-readable message.
@@ -76,6 +78,9 @@ function resolveMessage(
   if (errors['phone'] !== undefined) {
     return `${label} غير صحيح`;
   }
+  if (errors['amount'] !== undefined) {
+    return `${label} يجب أن يكون قيمة رقمية صالحة (حتى ${APP_CURRENCY.maxFractionDigits} أرقام عشرية)`;
+  }
 
   // Unknown validator — show the raw key as a graceful fallback.
   const firstKey = Object.keys(errors)[0];
@@ -111,6 +116,25 @@ export function phoneValidator(): ValidatorFn {
     return pattern.test(value) && digits.length >= 7 && digits.length <= 15
       ? null
       : { phone: true };
+  };
+}
+
+/**
+ * Money amount typed as text (so Arabic-Indic digits and `٫` are accepted —
+ * `type="number"` inputs reject them). Invalid format reports `amount`; the
+ * range reports the standard `min` / `max` keys so messages stay consistent.
+ * Empty values pass — combine with `Validators.required`.
+ */
+export function amountValidator(range: { min?: number; max?: number } = {}): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const raw = control.value as string | null;
+    if (raw == null || raw.trim() === '') return null;
+
+    const amount = parseAmount(raw);
+    if (amount === null) return { amount: true };
+    if (range.min !== undefined && amount < range.min) return { min: { min: range.min, actual: amount } };
+    if (range.max !== undefined && amount > range.max) return { max: { max: range.max, actual: amount } };
+    return null;
   };
 }
 

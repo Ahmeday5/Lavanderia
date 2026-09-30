@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DialogService } from '../../../../core/services/dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
@@ -13,12 +13,20 @@ import { formatDate, formatDateTime } from '../../../../shared/utils/date-format
 import { LaundriesService } from '../../services/laundries.service';
 import { Laundry } from '../../models/laundry.model';
 import { OwnerOrdersLinkComponent } from '../../../orders/components/owner-orders-link/owner-orders-link.component';
+import { DeliverySettingsModalComponent } from '../../components/delivery-settings-modal/delivery-settings-modal.component';
 
 @Component({
   selector: 'app-laundries-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, PaginationComponent, PhoneActionsComponent, RefreshButtonComponent, OwnerOrdersLinkComponent],
+  imports: [
+    FormsModule,
+    PaginationComponent,
+    PhoneActionsComponent,
+    RefreshButtonComponent,
+    OwnerOrdersLinkComponent,
+    DeliverySettingsModalComponent,
+  ],
   templateUrl: './laundries-list.component.html',
   styleUrl: './laundries-list.component.scss',
 })
@@ -29,6 +37,7 @@ export class LaundriesListComponent {
 
   protected readonly list = createPagedList((query) => this.laundriesService.list(query));
   protected readonly pending = pendingSet<number>();
+  protected readonly isDeliverySettingsOpen = signal(false);
 
   protected readonly formatDate = formatDate;
   protected readonly formatDateTime = formatDateTime;

@@ -1,0 +1,118 @@
+<app-modal [open]="true" title="الحد الأدنى لرسوم التوصيل" size="sm" [showHeader]="false" (closed)="onClose()">
+  <div class="dsm">
+    <button
+      type="button"
+      class="dsm__close"
+      (click)="onClose()"
+      [disabled]="resource.isSaving()"
+      aria-label="إغلاق"
+    >
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+
+    <div class="dsm__icon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></div>
+    <div class="dsm__title">الحد الأدنى لرسوم التوصيل</div>
+    <div class="dsm__subtitle">إعداد عام يُطبَّق على طلبات جميع المغاسل في المنصة</div>
+
+    <div class="dsm__rule" role="note">
+      <i class="fa-solid fa-circle-info dsm__rule-icon" aria-hidden="true"></i>
+      <p>
+        عندما تكون مسافة التوصيل <strong>أقل من {{ thresholdKm }} كم</strong>، يُحتسب هذا المبلغ
+        كرسوم توصيل ثابتة بدلًا من الرسوم المحسوبة حسب المسافة.
+      </p>
+    </div>
+
+    @switch (resource.status()) {
+      @case ('loading') {
+        <div class="dsm__form" aria-busy="true" aria-label="جارٍ تحميل إعدادات التوصيل">
+          <div class="dsm-skel dsm-skel--label"></div>
+          <div class="dsm-skel dsm-skel--input"></div>
+          <div class="dsm-skel dsm-skel--example"></div>
+        </div>
+      }
+
+      @case ('error') {
+        <div class="dsm__state" role="alert">
+          <i class="fa-solid fa-triangle-exclamation dsm__state-icon" aria-hidden="true"></i>
+          <div class="dsm__state-title">تعذّر تحميل إعدادات التوصيل</div>
+          <div class="dsm__state-subtitle">
+            {{ resource.loadError()?.message || 'تحقق من اتصالك ثم أعد المحاولة' }}
+          </div>
+          <button type="button" class="dsm-btn dsm-btn--ghost" (click)="resource.reload()">
+            <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+            إعادة المحاولة
+          </button>
+        </div>
+      }
+
+      @case ('ready') {
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="dsm__form">
+          @if (saveErrorMessage(); as message) {
+            <div class="alert alert-danger" role="alert">{{ message }}</div>
+          }
+
+          <div class="dsm__field">
+            <label class="form-label" for="dsm-fee">الحد الأدنى للتوصيل</label>
+            <div
+              class="dsm__input-wrap"
+              [class.dsm__input-wrap--invalid]="form.controls.minimumDeliveryFee.invalid && form.controls.minimumDeliveryFee.touched"
+            >
+              <i class="fa-solid fa-coins dsm__input-icon" aria-hidden="true"></i>
+              <input
+                id="dsm-fee"
+                type="text"
+                inputmode="decimal"
+                class="form-control"
+                formControlName="minimumDeliveryFee"
+                placeholder="10"
+                autocomplete="off"
+                aria-describedby="dsm-fee-current"
+                [attr.readonly]="resource.isSaving() ? '' : null"
+                (blur)="normalizeFee()"
+              />
+              <span class="dsm__suffix" aria-hidden="true">{{ currencySymbol }}</span>
+            </div>
+            <app-form-error [control]="form.controls.minimumDeliveryFee" label="الحد الأدنى للتوصيل" />
+            <div id="dsm-fee-current" class="dsm__hint">
+              القيمة الحالية:
+              <strong>{{ money(resource.saved()?.minimumDeliveryFee) }}</strong>
+            </div>
+          </div>
+
+          <!-- ── How it will be charged, with the value being typed ── -->
+          <dl class="dsm__example" aria-live="polite">
+            <div class="dsm__example-row dsm__example-row--active">
+              <dt>
+                <i class="fa-solid fa-person-walking" aria-hidden="true"></i>
+                مسافة أقل من {{ thresholdKm }} كم
+              </dt>
+              <dd>{{ draftFee() !== null ? money(draftFee()) : '—' }}</dd>
+            </div>
+            <div class="dsm__example-row">
+              <dt>
+                <i class="fa-solid fa-route" aria-hidden="true"></i>
+                مسافة {{ thresholdKm }} كم أو أكثر
+              </dt>
+              <dd>حسب المسافة</dd>
+            </div>
+          </dl>
+        </form>
+      }
+    }
+  </div>
+
+  <ng-container modal-footer>
+    <button type="button" class="dsm-btn dsm-btn--ghost" (click)="onClose()" [disabled]="resource.isSaving()">
+      إلغاء
+    </button>
+    <button type="button" class="dsm-btn dsm-btn--brand" (click)="onSubmit()" [disabled]="!canSave()">
+      @if (resource.isSaving()) {
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        جارٍ الحفظ…
+      } @else {
+        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+        حفظ
+      }
+    </button>
+  </ng-container>
+</app-modal>
