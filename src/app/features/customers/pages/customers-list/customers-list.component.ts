@@ -12,12 +12,13 @@ import { RefreshButtonComponent } from '../../../../shared/components/refresh-bu
 import { formatDate, formatDateTime } from '../../../../shared/utils/date-format.util';
 import { CustomersService } from '../../services/customers.service';
 import { Customer } from '../../models/customer.model';
+import { OwnerOrdersLinkComponent } from '../../../orders/components/owner-orders-link/owner-orders-link.component';
 
 @Component({
   selector: 'app-customers-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, PaginationComponent, PhoneActionsComponent, RefreshButtonComponent],
+  imports: [FormsModule, PaginationComponent, PhoneActionsComponent, RefreshButtonComponent, OwnerOrdersLinkComponent],
   templateUrl: './customers-list.component.html',
   styleUrl: './customers-list.component.scss',
 })

@@ -123,7 +123,8 @@
                     {{ formatDate(laundry.createdAt) }}
                   </time>
                 </td>
-                <td>
+                <td class="lp-actions">
+                  <app-owner-orders-link ownerType="Laundry" [ownerId]="laundry.id" [ownerName]="laundry.name" />
                   <button
                     type="button"
                     class="lp-ban-btn"

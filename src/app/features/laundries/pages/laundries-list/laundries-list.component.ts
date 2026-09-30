@@ -12,12 +12,13 @@ import { RefreshButtonComponent } from '../../../../shared/components/refresh-bu
 import { formatDate, formatDateTime } from '../../../../shared/utils/date-format.util';
 import { LaundriesService } from '../../services/laundries.service';
 import { Laundry } from '../../models/laundry.model';
+import { OwnerOrdersLinkComponent } from '../../../orders/components/owner-orders-link/owner-orders-link.component';
 
 @Component({
   selector: 'app-laundries-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, PaginationComponent, PhoneActionsComponent, RefreshButtonComponent],
+  imports: [FormsModule, PaginationComponent, PhoneActionsComponent, RefreshButtonComponent, OwnerOrdersLinkComponent],
   templateUrl: './laundries-list.component.html',
   styleUrl: './laundries-list.component.scss',
 })

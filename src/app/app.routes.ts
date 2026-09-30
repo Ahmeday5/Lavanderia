@@ -72,6 +72,11 @@ export const routes: Routes = [
           import('./features/drivers/drivers.routes').then((m) => m.driversRoutes),
       },
       {
+        path: 'orders',
+        loadChildren: () =>
+          import('./features/orders/orders.routes').then((m) => m.ordersRoutes),
+      },
+      {
         path: 'settings',
         // Mirrors the nav item's `roles` — hiding a link is not access control.
         canActivate: [roleGuard(['Admin'])],

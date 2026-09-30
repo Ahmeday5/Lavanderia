@@ -3,17 +3,29 @@
   <header class="dp-hero">
     <div class="dp-hero__glow" aria-hidden="true"></div>
     <div class="dp-hero__grid" aria-hidden="true"></div>
+    <div class="dp-hero__bubbles" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
 
     <div class="dp-hero__content">
       <div class="dp-hero__text">
         <span class="dp-hero__eyebrow">
-          <i class="fa-solid fa-water"></i>
-          Lavanderia Dashboard
+          <i class="fa-regular fa-calendar"></i>
+          {{ today }}
         </span>
         <h1 class="dp-hero__title">{{ greeting }}، {{ auth.currentUser()?.name }} 👋</h1>
-        <p class="dp-hero__subtitle">
-          إليك نظرة سريعة على أداء منصة الغسيل اليوم
-        </p>
+        <p class="dp-hero__subtitle">إليك نظرة شاملة على أداء منصة Lavanderia وحركة الطلبات</p>
+
+        @if (stats(); as s) {
+          <div class="dp-hero__pills">
+            <span class="dp-pill">
+              <span class="dp-pill__dot" aria-hidden="true"></span>
+              <strong [appCountUp]="s.ordersToday"></strong> طلب اليوم
+            </span>
+            <span class="dp-pill">
+              <i class="fa-solid fa-coins" aria-hidden="true"></i>
+              <strong [appCountUp]="s.revenueToday" [countUpFormat]="money"></strong> إيرادات اليوم
+            </span>
+          </div>
+        }
       </div>
 
       <div class="dp-hero__side">
@@ -25,94 +37,102 @@
     </div>
   </header>
 
-  <!-- ── Stats ── -->
-  <div class="dp-stats">
-    <a class="dp-stat" routerLink="/cities">
-      <div class="dp-stat__icon dp-stat__icon--blue">
-        <i class="fa-solid fa-map-location-dot"></i>
-      </div>
-      <div class="dp-stat__body">
-        <div class="dp-stat__value">
-          @if (isLoading()) {
-            <span class="dp-skel"></span>
-          } @else {
-            {{ citiesCount() }}
-          }
-        </div>
-        <div class="dp-stat__label">مدينة مسجّلة</div>
-      </div>
-      <i class="fa-solid fa-arrow-left dp-stat__arrow"></i>
-    </a>
+  @if (insights(); as ins) {
+    <!-- ── KPI cards ── -->
+    <section class="dp-kpis" aria-label="المؤشرات الرئيسية" [class.dp-busy]="isLoading()">
+      @for (kpi of kpis(); track kpi.key; let i = $index) {
+        <app-kpi-card [kpi]="kpi" [delay]="i * 70" />
+      }
+    </section>
 
-    <a class="dp-stat" routerLink="/services">
-      <div class="dp-stat__icon dp-stat__icon--purple">
-        <i class="fa-solid fa-shirt"></i>
-      </div>
-      <div class="dp-stat__body">
-        <div class="dp-stat__value">
-          @if (isLoading()) {
-            <span class="dp-skel"></span>
-          } @else {
-            {{ servicesCount() }}
-          }
-        </div>
-        <div class="dp-stat__label">خدمة متاحة</div>
-      </div>
-      <i class="fa-solid fa-arrow-left dp-stat__arrow"></i>
-    </a>
+    <!-- ── Orders analytics ── -->
+    <section class="dp-row dp-row--orders">
+      <app-orders-distribution-card [phases]="ins.phases" [delay]="120" />
+      <app-status-breakdown-card [rows]="ins.statusRows" [delay]="180" />
+    </section>
 
-    <a class="dp-stat" routerLink="/app-users">
-      <div class="dp-stat__icon dp-stat__icon--teal">
-        <i class="fa-solid fa-user-shield"></i>
-      </div>
-      <div class="dp-stat__body">
-        <div class="dp-stat__value">
-          @if (isLoading()) {
-            <span class="dp-skel"></span>
-          } @else {
-            {{ usersCount() }}
-          }
+    <!-- ── Performance · finance · accounts ── -->
+    <section class="dp-row dp-row--three">
+      <app-performance-card
+        [completionRate]="ins.completionRate"
+        [rejectionRate]="ins.rejectionRate"
+        [openOrders]="ins.openOrders"
+        [totalOrders]="ins.stats.totalOrders"
+        [delay]="240"
+      />
+      <app-finance-card
+        [totalRevenue]="ins.stats.totalRevenue"
+        [revenueToday]="ins.stats.revenueToday"
+        [wallets]="ins.wallets"
+        [walletsTotal]="ins.walletsTotal"
+        [delay]="300"
+      />
+      <app-accounts-health-card [audiences]="ins.audiences" [delay]="360" />
+    </section>
+  } @else if (error()) {
+    <section class="dp-panel dp-state" role="alert">
+      <div class="dp-state__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <div class="dp-state__title">تعذّر تحميل الإحصائيات</div>
+      <div class="dp-state__text">{{ error()?.message }}</div>
+      <button type="button" class="dp-btn" (click)="retry()">
+        <i class="fa-solid fa-rotate-right"></i>
+        إعادة المحاولة
+      </button>
+    </section>
+  } @else {
+    <!-- ── First-load skeleton (mirrors the real layout, no layout shift) ── -->
+    <section class="dp-kpis" aria-busy="true" aria-label="جارٍ تحميل الإحصائيات">
+      @for (i of skeletonCards; track i) {
+        <div class="dp-kpi-skel">
+          <span class="dp-skel dp-skel--icon"></span>
+          <span class="dp-skel dp-skel--value"></span>
+          <span class="dp-skel dp-skel--line"></span>
         </div>
-        <div class="dp-stat__label">مستخدم لوحة التحكم</div>
-      </div>
-      <i class="fa-solid fa-arrow-left dp-stat__arrow"></i>
-    </a>
-  </div>
+      }
+    </section>
+    <section class="dp-row dp-row--orders" aria-hidden="true">
+      <div class="dp-panel"><span class="dp-skel dp-skel--block"></span></div>
+      <div class="dp-panel"><span class="dp-skel dp-skel--block"></span></div>
+    </section>
+  }
 
   <!-- ── Quick links ── -->
-  <div class="dp-section-title">الوصول السريع</div>
-  <div class="dp-quick-links">
-    <a class="dp-link" routerLink="/cities">
-      <div class="dp-link__icon">
-        <i class="fa-solid fa-map-pin"></i>
-      </div>
+  <h2 class="dp-section-title">الوصول السريع</h2>
+  <nav class="dp-quick-links" aria-label="الوصول السريع">
+    <a class="dp-link" routerLink="/laundries">
+      <div class="dp-link__icon"><i class="fa-solid fa-store"></i></div>
       <div class="dp-link__body">
-        <div class="dp-link__title">إدارة المدن</div>
-        <div class="dp-link__subtitle">أضف أو عدّل المدن التي تغطيها الخدمة</div>
+        <div class="dp-link__title">المغاسل</div>
+        <div class="dp-link__subtitle">تابع المغاسل الشريكة وطلباتها وحالة حساباتها</div>
+      </div>
+      <i class="fa-solid fa-chevron-left dp-link__chevron"></i>
+    </a>
+
+    <a class="dp-link" routerLink="/customers">
+      <div class="dp-link__icon"><i class="fa-solid fa-users"></i></div>
+      <div class="dp-link__body">
+        <div class="dp-link__title">العملاء</div>
+        <div class="dp-link__subtitle">استعرض العملاء وسجل طلباتهم</div>
+      </div>
+      <i class="fa-solid fa-chevron-left dp-link__chevron"></i>
+    </a>
+
+    <a class="dp-link" routerLink="/drivers">
+      <div class="dp-link__icon"><i class="fa-solid fa-motorcycle"></i></div>
+      <div class="dp-link__body">
+        <div class="dp-link__title">السائقون</div>
+        <div class="dp-link__subtitle">راقب جاهزية السائقين ورحلات التوصيل</div>
       </div>
       <i class="fa-solid fa-chevron-left dp-link__chevron"></i>
     </a>
 
     <a class="dp-link" routerLink="/services">
-      <div class="dp-link__icon">
-        <i class="fa-solid fa-shirt"></i>
-      </div>
+      <div class="dp-link__icon"><i class="fa-solid fa-shirt"></i></div>
       <div class="dp-link__body">
-        <div class="dp-link__title">إدارة الخدمات</div>
-        <div class="dp-link__subtitle">تحكّم في الخدمات والأصناف الخاصة بكل خدمة</div>
+        <div class="dp-link__title">الخدمات</div>
+        <div class="dp-link__subtitle">تحكّم في الخدمات والأصناف وأسعارها</div>
       </div>
       <i class="fa-solid fa-chevron-left dp-link__chevron"></i>
     </a>
-
-    <a class="dp-link" routerLink="/app-users">
-      <div class="dp-link__icon">
-        <i class="fa-solid fa-user-shield"></i>
-      </div>
-      <div class="dp-link__body">
-        <div class="dp-link__title">إدارة المستخدمين</div>
-        <div class="dp-link__subtitle">تحكّم في المستخدمين الذين يملكون صلاحية الوصول للوحة التحكم</div>
-      </div>
-      <i class="fa-solid fa-chevron-left dp-link__chevron"></i>
-    </a>
-  </div>
+  </nav>
 </div>

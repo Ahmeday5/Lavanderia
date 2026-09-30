@@ -32,6 +32,8 @@ export interface PagedList<T> {
   readonly search: Signal<string>;
 
   reload(): void;
+  /** Back to page 1 and refetch — for when an external filter changed. */
+  restart(): void;
   goToPage(page: number): void;
   setPageSize(size: number): void;
   setSearch(term: string): void;
@@ -144,6 +146,10 @@ export function createPagedList<T>(
     search: search.asReadonly(),
 
     reload: () => load$.next(),
+    restart: () => {
+      pageIndex.set(1);
+      load$.next();
+    },
     goToPage: (page) => {
       if (!Number.isFinite(page) || page < 1 || page === pageIndex()) return;
       pageIndex.set(page);

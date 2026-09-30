@@ -1,0 +1,183 @@
+<div class="op">
+  <!-- ── Hero ── -->
+  <header class="op-hero">
+    <div class="op-hero__glow" aria-hidden="true"></div>
+    <i class="fa-solid fa-basket-shopping op-hero__art" aria-hidden="true"></i>
+
+    @if (ownerMeta(); as meta) {
+      <nav class="op-crumbs" aria-label="مسار التنقل">
+        <a [routerLink]="meta.listRoute" class="op-crumbs__link">
+          <i class="fa-solid" [class]="meta.icon" aria-hidden="true"></i>
+          {{ meta.listLabel }}
+        </a>
+        <i class="fa-solid fa-chevron-left op-crumbs__sep" aria-hidden="true"></i>
+        <span aria-current="page">الطلبات</span>
+      </nav>
+
+      <div class="op-hero__content">
+        <div class="op-hero__text">
+          <span class="op-hero__eyebrow">
+            <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+            طلبات {{ meta.label }}
+          </span>
+          <h1 class="op-hero__title">{{ ownerName() }}</h1>
+          <p class="op-hero__subtitle">{{ meta.description }}</p>
+        </div>
+
+        <div class="op-hero__stat" aria-live="polite">
+          <span class="op-hero__stat-value" [appCountUp]="list.count()"></span>
+          <span class="op-hero__stat-label">
+            {{ statusFilter() ? 'طلب «' + statusMeta[statusFilter()!].label + '»' : 'طلب إجمالًا' }}
+          </span>
+        </div>
+      </div>
+    }
+  </header>
+
+  <!-- ── Toolbar ── -->
+  <div class="op-toolbar">
+    <app-order-status-filter
+      class="op-toolbar__filter"
+      [value]="statusFilter()"
+      [disabled]="list.isLoading()"
+      (valueChange)="setStatus($event)"
+    />
+    <app-refresh-button />
+  </div>
+
+  <!-- ── Content ── -->
+  <section class="op-panel" [attr.aria-busy]="list.isLoading()">
+    @if (list.isLoading() && list.items().length === 0) {
+      @for (i of skeletonRows; track i) {
+        <div class="op-skel" [style.animation-delay.ms]="i * 60"></div>
+      }
+    } @else if (list.error()) {
+      <div class="op-state" role="alert">
+        <div class="op-state__icon op-state__icon--error"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="op-state__title">تعذّر تحميل الطلبات</div>
+        <div class="op-state__text">{{ list.error()?.message }}</div>
+        <button type="button" class="op-btn op-btn--primary" (click)="list.reload()">
+          <i class="fa-solid fa-rotate-right"></i>
+          إعادة المحاولة
+        </button>
+      </div>
+    } @else if (list.items().length === 0) {
+      <div class="op-state">
+        <div class="op-state__icon"><i class="fa-solid fa-box-open"></i></div>
+        @if (statusFilter(); as status) {
+          <div class="op-state__title">لا توجد طلبات بحالة «{{ statusMeta[status].label }}»</div>
+          <div class="op-state__text">جرّب حالة أخرى أو اعرض جميع الطلبات</div>
+          <button type="button" class="op-btn" (click)="setStatus(null)">عرض كل الحالات</button>
+        } @else {
+          <div class="op-state__title">لا توجد طلبات بعد</div>
+          <div class="op-state__text">ستظهر طلبات {{ ownerName() }} هنا فور إنشائها</div>
+        }
+      </div>
+    } @else {
+      <div class="op-table-wrap" [class.op-table-wrap--busy]="list.isLoading()">
+        <table class="op-table">
+          <thead>
+            <tr>
+              <th scope="col">الطلب</th>
+              @if (showCustomer()) {
+                <th scope="col">العميل</th>
+              }
+              @if (showLaundry()) {
+                <th scope="col">المغسلة</th>
+              }
+              <th scope="col">الحالة</th>
+              <th scope="col">الأصناف</th>
+              <th scope="col">التوصيل</th>
+              <th scope="col">الإجمالي</th>
+              <th scope="col"><span class="visually-hidden">الإجراءات</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of list.items(); track order.id; let i = $index) {
+              <tr class="op-row" [style.animation-delay.ms]="i * 30" (click)="openOrder(order)">
+                <td data-label="الطلب">
+                  <div class="op-order">
+                    <span class="op-order__icon" aria-hidden="true"><i class="fa-solid fa-receipt"></i></span>
+                    <div class="op-order__text">
+                      <span class="op-order__id">طلب #{{ order.id }}</span>
+                      <time class="op-muted" [attr.datetime]="order.createdAt" [title]="formatDateTime(order.createdAt)">
+                        {{ formatDate(order.createdAt) }}
+                      </time>
+                    </div>
+                  </div>
+                </td>
+
+                @if (showCustomer()) {
+                  <td data-label="العميل" (click)="$event.stopPropagation()">
+                    <div class="op-party">
+                      <span class="op-party__name">{{ order.customerName || '—' }}</span>
+                      <app-phone-actions [phone]="order.customerPhoneNumber" />
+                    </div>
+                  </td>
+                }
+
+                @if (showLaundry()) {
+                  <td data-label="المغسلة">
+                    <span class="op-laundry">
+                      <i class="fa-solid fa-store" aria-hidden="true"></i>
+                      {{ order.laundryName || '—' }}
+                    </span>
+                  </td>
+                }
+
+                <td data-label="الحالة">
+                  <app-order-status-badge [status]="order.status" />
+                </td>
+
+                <td data-label="الأصناف">
+                  <span class="op-pieces" [title]="order.items.length + ' صنف'">
+                    <i class="fa-solid fa-shirt" aria-hidden="true"></i>
+                    {{ int(order.piecesCount) }} قطعة
+                  </span>
+                </td>
+
+                <td data-label="التوصيل">
+                  <div class="op-trips">
+                    @for (type of tripTypes; track type) {
+                      <span
+                        class="op-trip"
+                        [attr.data-tone]="tripTone(order, type)"
+                        [title]="tripTitle(order, type)"
+                      >
+                        <i class="fa-solid" [class]="tripType[type].icon" aria-hidden="true"></i>
+                        <span class="visually-hidden">{{ tripTitle(order, type) }}</span>
+                      </span>
+                    }
+                  </div>
+                </td>
+
+                <td data-label="الإجمالي">
+                  <span class="op-total">{{ money(order.totalPrice) }}</span>
+                </td>
+
+                <td class="op-actions">
+                  <button type="button" class="op-btn op-btn--sm" (click)="$event.stopPropagation(); openOrder(order)">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                    التفاصيل
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <app-pagination
+    [pageIndex]="list.pageIndex()"
+    [pageSize]="list.pageSize()"
+    [count]="list.count()"
+    [totalPages]="list.totalPages()"
+    [disabled]="list.isLoading()"
+    (pageChange)="list.goToPage($event)"
+    (pageSizeChange)="list.setPageSize($event)"
+  />
+</div>
+
+<app-order-details-modal [order]="selectedOrder()" (closed)="selectedOrder.set(null)" />

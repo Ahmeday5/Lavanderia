@@ -1,0 +1,191 @@
+<app-modal [open]="order() !== null" [title]="title()" size="lg" (closed)="closed.emit()">
+  @if (order(); as o) {
+    <div class="od">
+      <!-- ── Summary ── -->
+      <div class="od-summary">
+        <app-order-status-badge [status]="o.status" size="lg" />
+        <time class="od-summary__date" [attr.datetime]="o.createdAt">
+          <i class="fa-regular fa-clock" aria-hidden="true"></i>
+          {{ formatDateTime(o.createdAt) || '—' }}
+        </time>
+        <span class="od-summary__total">{{ money(o.totalPrice) }}</span>
+      </div>
+
+      <!-- ── Lifecycle tracker ── -->
+      @if (isRejected()) {
+        <div class="od-alert od-alert--danger" role="status">
+          <i class="fa-solid fa-ban" aria-hidden="true"></i>
+          <div>
+            <strong>تم رفض هذا الطلب</strong>
+            <span>لن يكمل الطلب مراحل المعالجة والتوصيل.</span>
+          </div>
+        </div>
+      } @else {
+        <ol class="od-track" [style.--steps]="timeline().length" aria-label="مراحل الطلب">
+          <span class="od-track__line" aria-hidden="true">
+            <span class="od-track__fill" [style.width.%]="timelineProgress() * 100"></span>
+          </span>
+          @for (step of timeline(); track step.label; let i = $index) {
+            <li
+              class="od-step"
+              [class.od-step--done]="step.state === 'done'"
+              [class.od-step--current]="step.state === 'current'"
+              [attr.aria-current]="step.state === 'current' ? 'step' : null"
+              [style.animation-delay.ms]="i * 50"
+            >
+              <span class="od-step__dot">
+                <i class="fa-solid" [class]="step.state === 'done' ? 'fa-check' : step.icon" aria-hidden="true"></i>
+              </span>
+              <span class="od-step__label">{{ step.label }}</span>
+            </li>
+          }
+        </ol>
+      }
+
+      @if (o.status === 'AdjustmentPendingApproval' || o.hasPendingAdjustment) {
+        <div class="od-alert od-alert--warn" role="status">
+          <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>
+          <div>
+            <strong>يوجد تعديل بانتظار موافقة العميل</strong>
+            <span>اقترحت المغسلة تعديلًا على أصناف الطلب أو سعره.</span>
+          </div>
+        </div>
+      }
+
+      <!-- ── Parties ── -->
+      <section class="od-grid">
+        <div class="od-card">
+          <div class="od-card__head"><i class="fa-solid fa-user" aria-hidden="true"></i> العميل</div>
+          <div class="od-card__name">{{ o.customerName || '—' }}</div>
+          <app-phone-actions [phone]="o.customerPhoneNumber" />
+          @if (pickupContactDiffers()) {
+            <div class="od-card__sub">
+              <span class="od-muted">جهة الاستلام:</span>
+              {{ o.pickupContactName || '—' }}
+            </div>
+            <app-phone-actions [phone]="o.pickupContactPhoneNumber" />
+          }
+        </div>
+
+        <div class="od-card">
+          <div class="od-card__head"><i class="fa-solid fa-store" aria-hidden="true"></i> المغسلة</div>
+          <div class="od-card__name">{{ o.laundryName || '—' }}</div>
+          <div class="od-card__sub od-muted">#{{ o.laundryId }}</div>
+        </div>
+
+        <div class="od-card od-card--wide">
+          <div class="od-card__head"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> عنوان التسليم</div>
+          <div class="od-address">
+            <span>{{ o.deliveryAddress || 'لم يُحدَّد عنوان' }}</span>
+            @if (o.deliveryLocation; as point) {
+              <a class="od-link" [href]="mapsUrl(point)" target="_blank" rel="noopener noreferrer">
+                <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+                عرض على الخريطة
+              </a>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Items + pricing ── -->
+      <section class="od-section">
+        <h3 class="od-section__title">
+          الأصناف
+          <span class="od-count">{{ int(o.piecesCount) }} قطعة</span>
+        </h3>
+
+        @if (o.items.length === 0) {
+          <div class="od-empty">لا توجد أصناف في هذا الطلب</div>
+        } @else {
+          <table class="od-items">
+            <thead>
+              <tr>
+                <th scope="col">الصنف</th>
+                <th scope="col">السعر</th>
+                <th scope="col">الكمية</th>
+                <th scope="col">الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of o.items; track item.id) {
+                <tr [class.od-items__row--returned]="item.isReturned">
+                  <td>
+                    {{ item.name || '—' }}
+                    @if (item.isReturned) {
+                      <span class="od-tag"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> مُرتجع</span>
+                    }
+                  </td>
+                  <td>{{ money(item.price) }}</td>
+                  <td>× {{ int(item.quantity) }}</td>
+                  <td class="od-strong">{{ money(item.lineTotal) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        <dl class="od-bill">
+          <div><dt>قيمة الأصناف</dt><dd>{{ money(o.itemsTotal) }}</dd></div>
+          <div><dt>رسوم الاستلام</dt><dd>{{ money(o.pickupFee) }}</dd></div>
+          <div><dt>رسوم التسليم</dt><dd>{{ money(o.dropoffFee) }}</dd></div>
+          <div class="od-bill__total"><dt>الإجمالي</dt><dd>{{ money(o.totalPrice) }}</dd></div>
+          @if (o.paymentStatus) {
+            <div><dt>حالة الدفع</dt><dd>{{ o.paymentStatus }}</dd></div>
+          }
+        </dl>
+      </section>
+
+      <!-- ── Trips ── -->
+      <section class="od-section">
+        <h3 class="od-section__title">رحلات التوصيل</h3>
+        <div class="od-grid">
+          @for (entry of trips(); track entry.type) {
+            <div class="od-card od-trip">
+              <div class="od-card__head">
+                <i class="fa-solid" [class]="tripType[entry.type].icon" aria-hidden="true"></i>
+                {{ tripType[entry.type].label }}
+                <span class="od-muted od-trip__route">{{ tripType[entry.type].route }}</span>
+              </div>
+
+              @if (entry.trip; as trip) {
+                <span class="od-trip__state" [attr.data-tone]="tripState[trip.state].tone">
+                  <i class="fa-solid" [class]="tripState[trip.state].icon" aria-hidden="true"></i>
+                  {{ tripState[trip.state].label }}
+                </span>
+
+                @if (trip.driverName) {
+                  <div class="od-card__name">{{ trip.driverName }}</div>
+                  <app-phone-actions [phone]="trip.driverPhoneNumber" />
+                } @else if (trip.pendingRequestsCount > 0) {
+                  <div class="od-card__sub">
+                    {{ int(trip.pendingRequestsCount) }} طلب من السائقين بانتظار الرد
+                  </div>
+                }
+
+                <dl class="od-kv">
+                  <div><dt>الرسوم</dt><dd>{{ money(trip.fee) }}</dd></div>
+                  @if (trip.distanceKm !== null) {
+                    <div><dt>المسافة</dt><dd>{{ decimal(trip.distanceKm) }} كم</dd></div>
+                  }
+                </dl>
+
+                @if (trip.photoUrls.length) {
+                  <div class="od-photos">
+                    @for (url of trip.photoUrls; track url; let i = $index) {
+                      <a class="od-photo" [href]="url" target="_blank" rel="noopener noreferrer"
+                         [attr.aria-label]="'صورة إثبات ' + (i + 1)">
+                        <img [src]="url" alt="" loading="lazy" />
+                      </a>
+                    }
+                  </div>
+                }
+              } @else {
+                <div class="od-empty">لم تُنشأ هذه الرحلة بعد</div>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+  }
+</app-modal>

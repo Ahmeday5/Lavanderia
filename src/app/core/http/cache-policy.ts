@@ -46,6 +46,9 @@ export const TTL_OVERRIDES: readonly { match: string; ttlMs: number }[] = [
   { match: 'dashboard/drivers', ttlMs: 60 * 1000 },
   { match: 'dashboard/customers', ttlMs: 2 * 60 * 1000 },
   { match: 'dashboard/laundries', ttlMs: 2 * 60 * 1000 },
+  // Orders move through their lifecycle from the apps, minute by minute.
+  { match: 'dashboard/orders', ttlMs: 60 * 1000 },
+  { match: 'dashboard/statistics', ttlMs: 60 * 1000 },
 ];
 
 /**

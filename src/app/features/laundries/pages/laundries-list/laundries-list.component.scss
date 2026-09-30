@@ -327,6 +327,10 @@
 }
 
 /* ── Ban / unban action ── */
+.lp-actions {
+  text-align: end;
+}
+
 .lp-ban-btn {
   display: inline-flex;
   align-items: center;

@@ -12,6 +12,7 @@ import { RefreshButtonComponent } from '../../../../shared/components/refresh-bu
 import { formatDate, formatDateTime } from '../../../../shared/utils/date-format.util';
 import { DriversService } from '../../services/drivers.service';
 import { Driver } from '../../models/driver.model';
+import { OwnerOrdersLinkComponent } from '../../../orders/components/owner-orders-link/owner-orders-link.component';
 
 const SKELETON_ROWS = [1, 2, 3, 4, 5, 6];
 
@@ -19,7 +20,7 @@ const SKELETON_ROWS = [1, 2, 3, 4, 5, 6];
   selector: 'app-drivers-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, PaginationComponent, PhoneActionsComponent, RefreshButtonComponent],
+  imports: [FormsModule, PaginationComponent, PhoneActionsComponent, RefreshButtonComponent, OwnerOrdersLinkComponent],
   templateUrl: './drivers-list.component.html',
   styleUrl: './drivers-list.component.scss',
 })
