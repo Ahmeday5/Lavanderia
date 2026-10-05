@@ -52,6 +52,13 @@ export const routes: Routes = [
           import('./features/services/services.routes').then((m) => m.servicesRoutes),
       },
       {
+        path: 'advertisements',
+        loadChildren: () =>
+          import('./features/advertisements/advertisements.routes').then(
+            (m) => m.advertisementsRoutes,
+          ),
+      },
+      {
         path: 'app-users',
         loadChildren: () =>
           import('./features/app-users/app-users.routes').then((m) => m.appUsersRoutes),

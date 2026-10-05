@@ -1,0 +1,104 @@
+<app-modal
+  [open]="open()"
+  title=""
+  size="md"
+  [showHeader]="false"
+  (closed)="onClose()"
+>
+  <div class="afm">
+    <button type="button" class="afm__close" (click)="onClose()" [disabled]="isSubmitting()" aria-label="إغلاق">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+
+    <div class="afm__icon">
+      <i class="fa-solid" [class.fa-bullhorn]="!isEditMode()" [class.fa-pen]="isEditMode()"></i>
+    </div>
+    <div class="afm__title">{{ isEditMode() ? 'تعديل الإعلان' : 'إضافة إعلان جديد' }}</div>
+    <div class="afm__subtitle">
+      {{ isEditMode() ? 'عدّل عنوان الإعلان أو الفئة المستهدفة أو صورته' : 'أنشئ إعلانًا جديدًا واختر الفئة التي سيظهر لها' }}
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="afm__form">
+      @if (serverError(); as error) {
+        <div class="alert alert-danger" role="alert">{{ error }}</div>
+      }
+
+      <!-- Title -->
+      <div class="afm__field">
+        <div class="afm__label-row">
+          <label class="form-label" for="ad-title">عنوان الإعلان</label>
+          <span class="afm__counter" [class.afm__counter--over]="titleLength() > titleMax">
+            {{ titleLength() }}/{{ titleMax }}
+          </span>
+        </div>
+        <div class="afm__input-wrap">
+          <i class="fa-solid fa-heading afm__input-icon"></i>
+          <input
+            id="ad-title"
+            type="text"
+            class="form-control"
+            formControlName="title"
+            placeholder="مثال: خصم 20% على أول طلب"
+            autocomplete="off"
+            [attr.maxlength]="titleMax"
+            [attr.readonly]="isSubmitting() ? '' : null"
+          />
+        </div>
+        <app-form-error [control]="form.controls.title" label="عنوان الإعلان" />
+      </div>
+
+      <!-- Target audience -->
+      <div class="afm__field">
+        <span class="form-label" id="ad-target-label">الفئة المستهدفة</span>
+        <div class="afm__targets" role="radiogroup" aria-labelledby="ad-target-label">
+          @for (target of targets; track target) {
+            <button
+              type="button"
+              role="radio"
+              class="afm__target"
+              [class.afm__target--on]="form.controls.targetType.value === target"
+              [attr.aria-checked]="form.controls.targetType.value === target"
+              [style.--t-color]="targetMeta[target].color"
+              [style.--t-ink]="targetMeta[target].ink"
+              [style.--t-tint]="targetMeta[target].tint"
+              [disabled]="isSubmitting()"
+              (click)="selectTarget(target)"
+            >
+              <span class="afm__target-icon"><i class="fa-solid" [class]="targetMeta[target].icon"></i></span>
+              <span class="afm__target-label">{{ targetMeta[target].label }}</span>
+              <span class="afm__target-hint">{{ targetMeta[target].audience }}</span>
+              <i class="fa-solid fa-circle-check afm__target-check" aria-hidden="true"></i>
+            </button>
+          }
+        </div>
+        <app-form-error [control]="form.controls.targetType" label="الفئة المستهدفة" />
+      </div>
+
+      <!-- Image -->
+      <div class="afm__field">
+        <app-image-picker
+          [label]="isEditMode() ? 'صورة الإعلان (اتركها لإبقاء الصورة الحالية)' : 'صورة الإعلان'"
+          [currentUrl]="advertisement()?.imageUrl ?? null"
+          [disabled]="isSubmitting()"
+          [busy]="isSubmitting() && !!form.controls.image.value"
+          [error]="imageError()"
+          (fileChange)="onImageChange($event)"
+        />
+      </div>
+    </form>
+  </div>
+
+  <ng-container modal-footer>
+    <button type="button" class="afm-btn afm-btn--ghost" (click)="onClose()" [disabled]="isSubmitting()">
+      إلغاء
+    </button>
+    <button type="button" class="afm-btn afm-btn--brand" (click)="onSubmit()" [disabled]="isSubmitting()">
+      @if (isSubmitting()) {
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        جارٍ الحفظ…
+      } @else {
+        {{ isEditMode() ? 'حفظ التعديلات' : 'إضافة الإعلان' }}
+      }
+    </button>
+  </ng-container>
+</app-modal>

@@ -304,6 +304,11 @@ export class AuthService {
     return this.storage.get(environment.refreshTokenKey);
   }
 
+  /** True once the session was declared dead and a logout is under way. */
+  isSessionEnding(): boolean {
+    return this.sessionDead;
+  }
+
   isLoggedIn(): boolean {
     return !!this.getAccessToken() && !!this.getRefreshToken();
   }
@@ -401,6 +406,8 @@ export class AuthService {
       deviceInfo: dev.deviceInfo,
       deviceId: dev.deviceId,
     };
+    // The access token we're replacing — recovery must never hand it back.
+    const staleAccessToken = this.getAccessToken();
 
     return this.api
       .post<AuthResponseData>(AUTH_ENDPOINTS.refresh, payload, {
@@ -413,7 +420,7 @@ export class AuthService {
         // instead of throwing — otherwise the next attempt sends a token the
         // server already consumed and we get a self-inflicted 401 → logout.
         map((data) => this.persistSession(data, false)),
-        catchError((err) => this.recoverOrFail(err))
+        catchError((err) => this.recoverOrFail(err, staleAccessToken))
       );
   }
 
@@ -428,10 +435,16 @@ export class AuthService {
    *  3. Transient (network, CORS, 5xx) — server didn't disown the token, we
    *     just couldn't reach it. Backoff + retry; keep session alive.
    */
-  private recoverOrFail(err: unknown): Observable<AuthTokens> {
+  private recoverOrFail(
+    err: unknown,
+    staleAccessToken: string | null,
+  ): Observable<AuthTokens> {
     // Cheap pre-check: another tab may have already broadcasted a refresh by
-    // the time the failure landed. Skip the wait when possible.
-    const immediate = this.readFreshTokens();
+    // the time the failure landed. Skip the wait when possible. Only a token
+    // DIFFERENT from the one we were replacing counts — the stale one may
+    // look locally unexpired while the server has already rejected it, and
+    // returning it would replay the dead token instead of logging out.
+    const immediate = this.readFreshTokens(staleAccessToken);
     if (immediate) {
       this.refreshFailureStreak = 0;
       this.scheduleProactiveRefresh();
@@ -442,7 +455,7 @@ export class AuthService {
       return of(null).pipe(
         delay(REUSE_RACE_RECHECK_DELAY_MS),
         switchMap(() => {
-          const recovered = this.readFreshTokens();
+          const recovered = this.readFreshTokens(staleAccessToken);
           if (recovered) {
             this.refreshFailureStreak = 0;
             this.scheduleProactiveRefresh();
@@ -624,11 +637,16 @@ export class AuthService {
     return Date.now() + 15 * 60 * 1000;
   }
 
-  /** Returns stored tokens IFF the access token is still safely valid. */
-  private readFreshTokens(): AuthTokens | null {
+  /**
+   * Returns stored tokens IFF the access token is still safely valid.
+   * @param exclude a known-bad access token that must not be returned even
+   *   if its `exp` claim still looks fresh.
+   */
+  private readFreshTokens(exclude?: string | null): AuthTokens | null {
     const accessToken = this.getAccessToken();
     const refreshToken = this.getRefreshToken();
     if (!accessToken || !refreshToken) return null;
+    if (exclude && accessToken === exclude) return null;
 
     const expiresAt = getJwtExpiry(accessToken);
     if (!expiresAt) return null;

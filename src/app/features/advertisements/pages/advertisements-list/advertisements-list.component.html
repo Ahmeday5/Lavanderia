@@ -1,0 +1,171 @@
+<div class="ap">
+  <!-- ── Hero header ── -->
+  <header class="ap-hero">
+    <div class="ap-hero__glow" aria-hidden="true"></div>
+    <div class="ap-hero__content">
+      <div class="ap-hero__text">
+        <span class="ap-hero__eyebrow">
+          <i class="fa-solid fa-bullhorn"></i>
+          التسويق والترويج
+        </span>
+        <h1 class="ap-hero__title">الإعلانات</h1>
+        <p class="ap-hero__subtitle">
+          أدِر البنرات الإعلانية التي تظهر للعملاء والمغاسل والسائقين — أضف، عدّل أو احذف بسهولة تامة
+        </p>
+      </div>
+
+      <div class="ap-hero__stat">
+        <span class="ap-hero__stat-value">{{ list.count() }}</span>
+        <span class="ap-hero__stat-label">{{ statLabel() }}</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Toolbar ── -->
+  <div class="ap-toolbar">
+    <div class="ap-search">
+      <i class="fa-solid fa-magnifying-glass ap-search__icon"></i>
+      <input
+        type="text"
+        class="ap-search__input"
+        placeholder="ابحث بعنوان الإعلان..."
+        aria-label="البحث في الإعلانات"
+        [ngModel]="list.searchInput()"
+        (ngModelChange)="list.setSearch($event)"
+      />
+      @if (list.searchInput()) {
+        <button type="button" class="ap-search__clear" (click)="list.clearSearch()" aria-label="مسح البحث">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      }
+    </div>
+
+    <app-refresh-button />
+
+    <button type="button" class="ap-add-btn" (click)="openCreateModal()">
+      <i class="fa-solid fa-plus"></i>
+      <span>إضافة إعلان</span>
+    </button>
+  </div>
+
+  <app-ad-target-filter [value]="targetFilter()" [disabled]="list.isLoading()" (valueChange)="setTarget($event)" />
+
+  <!-- ── Content ── -->
+  @if (list.isLoading()) {
+    <div class="ap-grid" aria-busy="true">
+      @for (i of skeletonCards; track i) {
+        <div class="ap-skeleton">
+          <div class="ap-skeleton__media"></div>
+          <div class="ap-skeleton__line"></div>
+          <div class="ap-skeleton__line ap-skeleton__line--short"></div>
+        </div>
+      }
+    </div>
+  } @else if (list.error()) {
+    <div class="ap-empty" role="alert">
+      <div class="ap-empty__icon ap-empty__icon--danger">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="ap-empty__title">تعذّر تحميل الإعلانات</div>
+      <div class="ap-empty__subtitle">{{ list.error()?.message }}</div>
+      <button type="button" class="ap-add-btn" (click)="list.reload()">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>إعادة المحاولة</span>
+      </button>
+    </div>
+  } @else if (list.items().length === 0) {
+    @if (emptyState(); as empty) {
+    <div class="ap-empty">
+      <div class="ap-empty__icon">
+        <i class="fa-solid" [class]="empty.icon"></i>
+      </div>
+      <div class="ap-empty__title">{{ empty.title }}</div>
+      <div class="ap-empty__subtitle">{{ empty.subtitle }}</div>
+      @if (empty.canCreate) {
+        <button type="button" class="ap-add-btn" (click)="openCreateModal()">
+          <i class="fa-solid fa-plus"></i>
+          <span>إضافة إعلان</span>
+        </button>
+      }
+    </div>
+    }
+  } @else {
+    <div class="ap-grid">
+      @for (ad of list.items(); track ad.id; let i = $index) {
+        <article class="ap-card" [class.ap-card--busy]="deleting.has(ad.id)" [style.animation-delay.ms]="i * 40">
+          <div class="ap-card__media">
+            @if (ad.imageUrl) {
+              <a
+                class="ap-card__media-link"
+                [href]="ad.imageUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                [attr.aria-label]="'عرض صورة إعلان ' + ad.title + ' بالحجم الكامل'"
+              >
+                <app-thumb [src]="ad.imageUrl" [alt]="ad.title" icon="fa-image" />
+                <span class="ap-card__zoom" aria-hidden="true"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
+              </a>
+            } @else {
+              <app-thumb [src]="null" icon="fa-image" />
+            }
+            <div class="ap-card__badge">
+              <app-ad-target-badge [target]="ad.targetType" />
+            </div>
+          </div>
+
+          <div class="ap-card__body">
+            <div class="ap-card__text">
+              <h2 class="ap-card__title" [title]="ad.title">{{ ad.title }}</h2>
+              <span class="ap-card__id">#{{ ad.id }}</span>
+            </div>
+
+            <div class="ap-card__actions">
+              <button
+                type="button"
+                class="ap-icon-btn"
+                (click)="openEditModal(ad)"
+                [disabled]="deleting.has(ad.id)"
+                title="تعديل"
+                aria-label="تعديل الإعلان"
+              >
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button
+                type="button"
+                class="ap-icon-btn ap-icon-btn--danger"
+                (click)="onDelete(ad)"
+                [disabled]="deleting.has(ad.id)"
+                title="حذف"
+                aria-label="حذف الإعلان"
+              >
+                @if (deleting.has(ad.id)) {
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                } @else {
+                  <i class="fa-solid fa-trash"></i>
+                }
+              </button>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  <app-pagination
+    [pageIndex]="list.pageIndex()"
+    [pageSize]="list.pageSize()"
+    [count]="list.count()"
+    [totalPages]="list.totalPages()"
+    [disabled]="list.isLoading()"
+    (pageChange)="list.goToPage($event)"
+    (pageSizeChange)="list.setPageSize($event)"
+  />
+</div>
+
+<app-ad-form-modal
+  [open]="isModalOpen()"
+  [advertisement]="editingAd()"
+  [defaultTarget]="targetFilter()"
+  (closed)="closeModal()"
+  (saved)="onSaved()"
+/>

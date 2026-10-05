@@ -28,6 +28,7 @@ export const NAV_SECTIONS: MenuSection[] = [
     items: [
       { id: 'cities', label: 'المدن', route: '/cities', icon: 'map-pin' },
       { id: 'services', label: 'الخدمات', route: '/services', icon: 'washing-machine' },
+      { id: 'advertisements', label: 'الإعلانات', route: '/advertisements', icon: 'megaphone' },
       { id: 'app-users', label: 'المستخدمون', route: '/app-users', icon: 'user-shield' },
       { id: 'settings', label: 'الإعدادات', route: '/settings', icon: 'settings', roles: ['Admin'] },
     ],

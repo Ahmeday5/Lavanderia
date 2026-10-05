@@ -31,11 +31,13 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       logError(req.method, req.url, err, apiError);
 
       // Suppress toasts when the user is not authenticated — covers in-flight
-      // requests that fail after an explicit logout (the token was just cleared).
+      // requests that fail after an explicit logout (the token was just cleared)
+      // and requests failing while an expired session is being logged out.
       const silent =
         req.context.get(SKIP_ERROR_TOAST) ||
         req.url.includes(AUTH_ENDPOINTS.refresh) ||
-        !auth.isAuthenticated();
+        !auth.isAuthenticated() ||
+        auth.isSessionEnding();
 
       if (!silent) toast.error(apiError.message);
 
