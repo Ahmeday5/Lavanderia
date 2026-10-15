@@ -35,6 +35,13 @@ export function asNumber(value: unknown, fallback = 0): number {
   return fallback;
 }
 
+/** Like `asNumber`, but keeps "no value" distinct from `0` (e.g. optional coordinates). */
+export function asNullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = asNumber(value, NaN);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export function asBoolean(value: unknown, fallback = false): boolean {
   if (typeof value === 'boolean') return value;
   if (value === 'true') return true;

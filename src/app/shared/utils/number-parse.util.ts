@@ -27,3 +27,21 @@ export function parseAmount(
   const value = Number(normalized);
   return Number.isFinite(value) ? value : null;
 }
+
+/** Signed decimal of any precision (`32.8872`, `-٣٫٥`) — e.g. coordinates. `null` if not a plain number. */
+export function parseDecimal(raw: string | null | undefined): number | null {
+  if (raw == null) return null;
+  const normalized = normalizeAmountInput(raw);
+  if (!/^-?\d+(\.\d+)?$/.test(normalized)) return null;
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : null;
+}
+
+/** Whole number (`2019`, `٢٠١٩`). `null` if not a plain integer. */
+export function parseInteger(raw: string | null | undefined): number | null {
+  if (raw == null) return null;
+  const normalized = normalizeAmountInput(raw);
+  if (!/^-?\d+$/.test(normalized)) return null;
+  const value = Number(normalized);
+  return Number.isSafeInteger(value) ? value : null;
+}

@@ -1,0 +1,222 @@
+@if (record.value(); as driver) {
+  <div class="ap">
+    <app-account-page-header
+      backLink="/drivers"
+      backLabel="السائقون"
+      [title]="driver.fullName || 'بدون اسم'"
+      [subtitle]="'#' + driver.id"
+      [imageUrl]="driver.images.profileImage"
+      icon="fa-motorcycle"
+      [badges]="badges(driver)"
+      [muted]="driver.isDeleted"
+    >
+      <a class="ap-btn" [routerLink]="ordersLink('Driver', driver.id)" [queryParams]="{ name: driver.fullName }">
+        <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+        طلبات السائق
+      </a>
+      @if (!driver.isDeleted) {
+        <a class="ap-btn ap-btn--brand" [routerLink]="['/drivers', driver.id, 'edit']">
+          <i class="fa-solid fa-pen" aria-hidden="true"></i>
+          تعديل
+        </a>
+        @if (isAdmin()) {
+          <button
+            type="button"
+            class="ap-btn"
+            [class.ap-btn--danger]="driver.isActive"
+            [class.ap-btn--success]="!driver.isActive"
+            [disabled]="isBusy()"
+            (click)="onToggleActive(driver)"
+          >
+            <i class="fa-solid" [class.fa-user-lock]="driver.isActive" [class.fa-user-check]="!driver.isActive" aria-hidden="true"></i>
+            {{ driver.isActive ? 'إيقاف / رفض' : 'موافقة / تفعيل' }}
+          </button>
+          <button type="button" class="ap-btn ap-btn--danger" [disabled]="isBusy()" (click)="onDelete(driver)">
+            @if (isBusy()) {
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            } @else {
+              <i class="fa-solid fa-trash" aria-hidden="true"></i>
+            }
+            حذف
+          </button>
+        }
+      }
+    </app-account-page-header>
+
+    @if (driver.isDeleted) {
+      <div class="ap-alert ap-alert--muted" role="status">
+        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+        <span>هذا الحساب محذوف{{ driver.deletedAt ? ' منذ ' + formatDate(driver.deletedAt) : '' }} ومتاح للعرض فقط.</span>
+      </div>
+    }
+    @if (licenseExpired()) {
+      <div class="ap-alert ap-alert--danger" role="alert">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <span>
+          رخصة القيادة منتهية منذ {{ formatDate(driver.licenseExpiryDate) }}.
+          @if (!driver.isActive && !driver.isDeleted) {
+            راجع المستندات قبل الموافقة على الحساب.
+          }
+        </span>
+      </div>
+    }
+
+    <div class="ap-columns">
+      <!-- Personal -->
+      <section class="ap-card" aria-labelledby="dd-personal">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-user" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="dd-personal">البيانات الشخصية</h2>
+        </div>
+        <dl class="ap-fields">
+          <div class="ap-field">
+            <dt>رقم الدخول</dt>
+            <dd><app-phone-actions [phone]="driver.phoneNumber" [verified]="driver.phoneNumberConfirmed" /></dd>
+          </div>
+          <div class="ap-field">
+            <dt>تاريخ الميلاد</dt>
+            <dd [class.ap-muted]="!driver.dateOfBirth">{{ formatDate(driver.dateOfBirth) }}</dd>
+          </div>
+          <div class="ap-field">
+            <dt>المدينة</dt>
+            <dd [class.ap-muted]="!driver.cityName">{{ driver.cityName || 'غير محددة' }}</dd>
+          </div>
+          <div class="ap-field">
+            <dt>تاريخ الإنشاء</dt>
+            <dd [title]="formatDateTime(driver.createdAt)">{{ formatDate(driver.createdAt) }}</dd>
+          </div>
+          <div class="ap-field ap-field--wide">
+            <dt>العنوان</dt>
+            <dd [class.ap-muted]="!driver.address">{{ driver.address || 'غير محدد' }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Wallet & status -->
+      <section class="ap-card" aria-labelledby="dd-wallet">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="dd-wallet">المحفظة والحالة</h2>
+        </div>
+        <dl class="ap-fields">
+          <div class="ap-field ap-field--wide">
+            <dt>رصيد المحفظة</dt>
+            <dd class="ap-money">{{ money(driver.walletBalance) }}</dd>
+          </div>
+          <div class="ap-field">
+            <dt>الحساب</dt>
+            <dd>{{ driver.isActive ? 'مفعل' : 'بانتظار الموافقة / موقوف' }}</dd>
+          </div>
+          <div class="ap-field">
+            <dt>الجاهزية</dt>
+            <dd>{{ driver.isAvailable ? 'متاح لاستقبال الطلبات' : 'غير متاح' }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- National ID -->
+      <section class="ap-card" aria-labelledby="dd-id">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-id-card" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="dd-id">البطاقة الشخصية</h2>
+        </div>
+        <dl class="ap-fields dd-gap">
+          <div class="ap-field">
+            <dt>الرقم الوطني</dt>
+            <dd class="ap-ltr">{{ driver.nationalId || '—' }}</dd>
+          </div>
+        </dl>
+        <div class="dd-docs">
+          <app-image-preview [label]="imageLabels.nationalIdFrontImage" [src]="driver.images.nationalIdFrontImage" />
+          <app-image-preview [label]="imageLabels.nationalIdBackImage" [src]="driver.images.nationalIdBackImage" />
+        </div>
+      </section>
+
+      <!-- License -->
+      <section class="ap-card" aria-labelledby="dd-license">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-address-card" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="dd-license">رخصة القيادة</h2>
+        </div>
+        <dl class="ap-fields dd-gap">
+          <div class="ap-field">
+            <dt>تاريخ الإصدار</dt>
+            <dd>{{ formatDate(driver.licenseIssueDate) }}</dd>
+          </div>
+          <div class="ap-field">
+            <dt>تاريخ الانتهاء</dt>
+            <dd [class.dd-expired]="licenseExpired()">
+              {{ formatDate(driver.licenseExpiryDate) }}
+              @if (licenseExpired()) {
+                <span>(منتهية)</span>
+              }
+            </dd>
+          </div>
+        </dl>
+        <div class="dd-docs">
+          <app-image-preview [label]="imageLabels.licenseFrontImage" [src]="driver.images.licenseFrontImage" />
+          <app-image-preview [label]="imageLabels.licenseBackImage" [src]="driver.images.licenseBackImage" />
+        </div>
+      </section>
+
+      <!-- Vehicle -->
+      <section class="ap-card dd-vehicle" aria-labelledby="dd-vehicle">
+        <div class="ap-card__head">
+          <i class="fa-solid" [class]="driver.vehicleType ? vehicleMeta[driver.vehicleType].icon : 'fa-car-side'" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="dd-vehicle">المركبة</h2>
+        </div>
+        <div class="dd-vehicle__body">
+          <dl class="ap-fields">
+            <div class="ap-field">
+              <dt>النوع</dt>
+              <dd>{{ driver.vehicleType ? vehicleMeta[driver.vehicleType].label : '—' }}</dd>
+            </div>
+            <div class="ap-field">
+              <dt>الماركة / الموديل</dt>
+              <dd>{{ (driver.vehicleMake + ' ' + driver.vehicleModel).trim() || '—' }}</dd>
+            </div>
+            <div class="ap-field">
+              <dt>سنة الصنع</dt>
+              <dd>{{ driver.vehicleYear ?? '—' }}</dd>
+            </div>
+            <div class="ap-field">
+              <dt>اللون</dt>
+              <dd>{{ driver.vehicleColor || '—' }}</dd>
+            </div>
+            <div class="ap-field">
+              <dt>رقم اللوحة</dt>
+              <dd class="ap-ltr">{{ driver.plateNumber || '—' }}</dd>
+            </div>
+          </dl>
+          <app-image-preview [label]="imageLabels.vehicleImage" [src]="driver.images.vehicleImage" />
+        </div>
+      </section>
+    </div>
+  </div>
+} @else if (recordId() === null || record.status() === 'not-found') {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-user-slash" aria-hidden="true"></i>
+    <strong>السائق غير موجود</strong>
+    <p>ربما تم حذفه أو أن الرابط غير صحيح.</p>
+    <a class="ap-btn" routerLink="/drivers">العودة إلى السائقين</a>
+  </div>
+} @else if (record.status() === 'error') {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+    <strong>تعذّر تحميل بيانات السائق</strong>
+    <p>{{ record.error()?.message }}</p>
+    <button type="button" class="ap-btn ap-btn--brand" (click)="record.reload()">
+      <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+      إعادة المحاولة
+    </button>
+  </div>
+} @else {
+  <div class="ap" aria-busy="true" aria-label="جارٍ تحميل بيانات السائق">
+    <div class="ap-skeleton" style="height: 110px"></div>
+    <div class="ap-columns">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="ap-skeleton" style="height: 240px"></div>
+      }
+    </div>
+  </div>
+}

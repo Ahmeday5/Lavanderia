@@ -26,10 +26,10 @@
     <div class="cup-search">
       <i class="fa-solid fa-magnifying-glass cup-search__icon"></i>
       <input
-        type="text"
+        type="search"
         class="cup-search__input"
-        placeholder="ابحث بالاسم أو رقم الهاتف..."
-        aria-label="بحث عن عميل بالاسم أو رقم الهاتف"
+        placeholder="ابحث بالاسم، الرقم، العنوان أو #الرقم التعريفي..."
+        aria-label="بحث عن عميل"
         [ngModel]="list.searchInput()"
         (ngModelChange)="list.setSearch($event)"
         (keydown.escape)="list.clearSearch()"
@@ -41,7 +41,15 @@
       }
     </div>
 
-    <app-refresh-button />
+    <app-deleted-toggle [(checked)]="includeDeleted" [disabled]="list.isLoading()" />
+
+    <div class="cup-toolbar__end">
+      <app-refresh-button />
+      <a class="acct-add-btn" routerLink="/customers/new">
+        <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+        <span>إضافة عميل</span>
+      </a>
+    </div>
   </div>
 
   <!-- ── Content ── -->
@@ -65,13 +73,13 @@
     } @else if (list.items().length === 0) {
       <div class="cup-empty">
         <div class="cup-empty__icon">
-          <i class="fa-solid fa-user-large-slash"></i>
+          <i class="fa-solid" [class.fa-magnifying-glass]="list.search()" [class.fa-user-large-slash]="!list.search()"></i>
         </div>
         <div class="cup-empty__title">
-          {{ list.search() ? 'لا توجد نتائج مطابقة' : 'لا يوجد عملاء بعد' }}
+          {{ list.search() ? 'لا توجد نتائج مطابقة لـ «' + list.search() + '»' : 'لا يوجد عملاء بعد' }}
         </div>
         <div class="cup-empty__subtitle">
-          {{ list.search() ? 'جرّب اسمًا أو رقم هاتف آخر' : 'سيظهر العملاء هنا فور تسجيلهم عبر التطبيق' }}
+          {{ list.search() ? 'جرّب اسمًا أو رقم هاتف آخر' : 'سيظهر العملاء هنا فور تسجيلهم أو إضافتهم' }}
         </div>
       </div>
     } @else {
@@ -83,23 +91,28 @@
               <th scope="col">رقم الهاتف</th>
               <th scope="col">المدينة</th>
               <th scope="col">الحالة</th>
-              <th scope="col">تاريخ الانضمام</th>
+              <th scope="col">تاريخ الإنشاء</th>
               <th scope="col"><span class="visually-hidden">الإجراءات</span></th>
             </tr>
           </thead>
           <tbody>
             @for (customer of list.items(); track customer.id; let i = $index) {
-              <tr class="cup-row" [class.cup-row--banned]="customer.isBanned" [style.animation-delay.ms]="i * 30">
+              <tr
+                class="cup-row"
+                [class.cup-row--banned]="customer.isBanned && !customer.isDeleted"
+                [class.acct-row--deleted]="customer.isDeleted"
+                [style.animation-delay.ms]="i * 30"
+              >
                 <td data-label="العميل">
-                  <div class="cup-customer">
-                    <span class="cup-avatar" [class.cup-avatar--off]="customer.isBanned" aria-hidden="true">
+                  <a class="cup-customer" [routerLink]="['/customers', customer.id]">
+                    <span class="cup-avatar" [class.cup-avatar--off]="customer.isBanned || customer.isDeleted" aria-hidden="true">
                       {{ initials(customer.name) }}
                     </span>
                     <div class="cup-customer__text">
                       <span class="cup-customer__name">{{ customer.name || 'بدون اسم' }}</span>
                       <span class="cup-customer__id">#{{ customer.id }}</span>
                     </div>
-                  </div>
+                  </a>
                 </td>
 
                 <td data-label="رقم الهاتف">
@@ -114,45 +127,57 @@
                 </td>
 
                 <td data-label="الحالة">
-                  @if (customer.isBanned) {
-                    <span class="cup-chip cup-chip--banned">
-                      <i class="fa-solid fa-ban"></i>
-                      محظور
-                    </span>
-                  } @else {
-                    <span class="cup-chip cup-chip--active">
-                      <i class="fa-solid fa-circle"></i>
-                      نشط
-                    </span>
-                  }
+                  <app-account-badges [badges]="badges(customer)" />
                 </td>
 
-                <td data-label="تاريخ الانضمام">
+                <td data-label="تاريخ الإنشاء">
                   <time class="cup-date" [attr.datetime]="customer.createdAt" [title]="formatDateTime(customer.createdAt)">
                     {{ formatDate(customer.createdAt) }}
                   </time>
                 </td>
 
                 <td class="cup-actions">
-                  <app-owner-orders-link ownerType="Customer" [ownerId]="customer.id" [ownerName]="customer.name" />
-                  <button
-                    type="button"
-                    class="cup-ban-btn"
-                    [class.cup-ban-btn--unban]="customer.isBanned"
-                    [disabled]="pending.has(customer.id)"
-                    [attr.aria-busy]="pending.has(customer.id)"
-                    (click)="onToggleBan(customer)"
-                  >
-                    @if (pending.has(customer.id)) {
-                      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    } @else if (customer.isBanned) {
-                      <i class="fa-solid fa-lock-open"></i>
-                      <span>إلغاء الحظر</span>
-                    } @else {
-                      <i class="fa-solid fa-ban"></i>
-                      <span>حظر</span>
+                  <div class="acct-actions">
+                    <a class="acct-icon-btn" [routerLink]="['/customers', customer.id]" title="عرض التفاصيل" aria-label="عرض التفاصيل">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                    @if (!customer.isDeleted) {
+                      <a class="acct-icon-btn" [routerLink]="['/customers', customer.id, 'edit']" title="تعديل" aria-label="تعديل">
+                        <i class="fa-solid fa-pen"></i>
+                      </a>
+                      <app-owner-orders-link ownerType="Customer" [ownerId]="customer.id" [ownerName]="customer.name" />
+                      @if (isAdmin()) {
+                        <button
+                          type="button"
+                          class="cup-ban-btn"
+                          [class.cup-ban-btn--unban]="customer.isBanned"
+                          [disabled]="pending.has(customer.id)"
+                          [attr.aria-busy]="pending.has(customer.id)"
+                          (click)="onToggleBan(customer)"
+                        >
+                          @if (pending.has(customer.id)) {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                          } @else if (customer.isBanned) {
+                            <i class="fa-solid fa-lock-open"></i>
+                            <span>إلغاء الحظر</span>
+                          } @else {
+                            <i class="fa-solid fa-ban"></i>
+                            <span>حظر</span>
+                          }
+                        </button>
+                        <button
+                          type="button"
+                          class="acct-icon-btn acct-icon-btn--danger"
+                          title="حذف"
+                          aria-label="حذف"
+                          [disabled]="pending.has(customer.id)"
+                          (click)="onDelete(customer)"
+                        >
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      }
                     }
-                  </button>
+                  </div>
                 </td>
               </tr>
             }
@@ -165,6 +190,7 @@
   <app-pagination
     [pageIndex]="list.pageIndex()"
     [pageSize]="list.pageSize()"
+    [pageSizeOptions]="pageSizeOptions"
     [count]="list.count()"
     [totalPages]="list.totalPages()"
     [disabled]="list.isLoading()"

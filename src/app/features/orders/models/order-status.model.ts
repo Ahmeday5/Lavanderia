@@ -17,6 +17,10 @@ export const ORDER_STATUSES = [
   'OutForDelivery',
   'Delivered',
   'Rejected',
+  'AwaitingDropoffCollection',
+  'PickupFailed',
+  'DeliveryFailed',
+  'Cancelled',
 ] as const;
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
@@ -67,6 +71,10 @@ export const ORDER_STATUS_META: Readonly<Record<OrderStatus, OrderStatusMeta>> =
   OutForDelivery: { label: 'جارٍ التوصيل', hint: 'السائق في الطريق لتسليم الطلب للعميل', icon: 'fa-truck-fast', phase: 'active' },
   Delivered: { label: 'تم التسليم', hint: 'تم تسليم الطلب للعميل بنجاح', icon: 'fa-house-circle-check', phase: 'completed' },
   Rejected: { label: 'مرفوض', hint: 'تم رفض الطلب', icon: 'fa-ban', phase: 'rejected' },
+  AwaitingDropoffCollection: { label: 'بانتظار استلام الدليفري', hint: 'الطلب جاهز في المغسلة وينتظر استلام سائق التوصيل', icon: 'fa-people-carry-box', phase: 'active' },
+  PickupFailed: { label: 'فشل الاستلام', hint: 'تعذّر على السائق استلام الملابس من العميل', icon: 'fa-triangle-exclamation', phase: 'rejected' },
+  DeliveryFailed: { label: 'فشل التسليم', hint: 'تعذّر على السائق تسليم الطلب للعميل', icon: 'fa-triangle-exclamation', phase: 'rejected' },
+  Cancelled: { label: 'ملغي', hint: 'تم إلغاء الطلب', icon: 'fa-circle-xmark', phase: 'rejected' },
 };
 
 /**

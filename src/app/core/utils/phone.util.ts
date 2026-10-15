@@ -45,6 +45,24 @@ export function toInternationalDigits(raw: string | null | undefined): string | 
   return value.length >= 10 && value.length <= 15 ? value : null;
 }
 
+/**
+ * Libyan mobile (091–095 + 7 digits), with or without a country prefix — the
+ * login number of every account. Approximate by design: the backend is the
+ * final authority. Test against `cleanPhone(raw)`.
+ */
+export const LIBYAN_MOBILE_PATTERN = /^(\+218|00218|218|0)?9[1-5]\d{7}$/;
+
+/** Libyan mobile or landline (2-digit area code + 6–7 digits), e.g. a laundry owner's line. */
+export const LIBYAN_PHONE_PATTERN = /^(\+218|00218|218|0)?(9[1-5]\d{7}|[2-8]\d{7,8})$/;
+
+export function isLibyanMobile(raw: string | null | undefined): boolean {
+  return LIBYAN_MOBILE_PATTERN.test(cleanPhone(raw));
+}
+
+export function isLibyanPhone(raw: string | null | undefined): boolean {
+  return LIBYAN_PHONE_PATTERN.test(cleanPhone(raw));
+}
+
 export function telHref(raw: string | null | undefined): string | null {
   const value = cleanPhone(raw);
   return value ? `tel:${value}` : null;

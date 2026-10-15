@@ -5,7 +5,11 @@ import {
   asRecord,
   asString,
 } from '../../../core/utils/coerce.util';
+import { GeoPoint, toGeoPoint } from '../../../shared/utils/geo.util';
 import { OrderStatus, toOrderStatus } from './order-status.model';
+
+export type { GeoPoint } from '../../../shared/utils/geo.util';
+export { mapsUrl } from '../../../shared/utils/geo.util';
 
 export interface OrderItem {
   id: number;
@@ -38,11 +42,6 @@ export interface OrderTrip {
   /** Drivers who asked to take this trip, still unanswered. */
   pendingRequestsCount: number;
   state: OrderTripState;
-}
-
-export interface GeoPoint {
-  lat: number;
-  lng: number;
 }
 
 export interface Order {
@@ -145,15 +144,6 @@ function tripStateOf(driverId: number | null, awaiting: boolean, confirmed: bool
   return driverId === null ? 'unassigned' : 'assigned';
 }
 
-function toGeoPoint(lat: unknown, lng: unknown): GeoPoint | null {
-  const la = asNumber(lat, NaN);
-  const ln = asNumber(lng, NaN);
-  if (!Number.isFinite(la) || !Number.isFinite(ln)) return null;
-  if (la === 0 && ln === 0) return null; // "null island" = not set
-  if (Math.abs(la) > 90 || Math.abs(ln) > 180) return null;
-  return { lat: la, lng: ln };
-}
-
 function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
@@ -169,8 +159,3 @@ export const TRIP_STATE_META: Readonly<Record<OrderTripState, { label: string; i
   'awaiting-confirmation': { label: 'بانتظار التأكيد', icon: 'fa-hourglass-half', tone: 'warn' },
   confirmed: { label: 'تم التأكيد', icon: 'fa-circle-check', tone: 'ok' },
 };
-
-/** Google Maps link for a point. */
-export function mapsUrl(point: GeoPoint): string {
-  return `https://www.google.com/maps/search/?api=1&query=${point.lat},${point.lng}`;
-}

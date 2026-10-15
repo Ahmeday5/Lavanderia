@@ -5,6 +5,7 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { ApiError } from '../../../../core/models/api-response.model';
 import { createPagedList } from '../../../../core/utils/paged-list.util';
 import { withLocalSearch } from '../../../../core/utils/local-search.util';
+import { bindListSearchToUrl } from '../../../../core/utils/url-search-sync.util';
 import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
 import { RefreshButtonComponent } from '../../../../shared/components/refresh-button/refresh-button.component';
 import { CitiesService } from '../../services/cities.service';
@@ -24,9 +25,15 @@ export class CitiesListComponent {
   private readonly dialog = inject(DialogService);
   private readonly toast = inject(ToastService);
 
+  /** First load is driven by the URL's `?search=` (see `bindListSearchToUrl`). */
   protected readonly list = createPagedList(
     withLocalSearch((query) => this.citiesService.list(query), (city) => [city.name]),
+    { immediate: false },
   );
+
+  constructor() {
+    bindListSearchToUrl(this.list);
+  }
 
   protected readonly isModalOpen = signal(false);
   protected readonly editingCity = signal<City | null>(null);

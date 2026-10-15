@@ -1,0 +1,15 @@
+@use '../../../accounts/styles/account-page';
+
+fieldset.ap-columns {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.lf-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}

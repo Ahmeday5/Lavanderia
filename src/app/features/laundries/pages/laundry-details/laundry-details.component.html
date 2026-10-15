@@ -1,0 +1,173 @@
+@if (record.value(); as laundry) {
+  <div class="ap">
+    <app-account-page-header
+      backLink="/laundries"
+      backLabel="المغاسل"
+      [title]="laundry.name"
+      [subtitle]="'#' + laundry.id"
+      [imageUrl]="laundry.imageUrl"
+      icon="fa-store"
+      [badges]="badges(laundry)"
+      [muted]="laundry.isDeleted"
+    >
+      <a class="ap-btn" [routerLink]="ordersLink('Laundry', laundry.id)" [queryParams]="{ name: laundry.name }">
+        <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+        طلبات المغسلة
+      </a>
+      @if (!laundry.isDeleted) {
+        <a class="ap-btn ap-btn--brand" [routerLink]="['/laundries', laundry.id, 'edit']">
+          <i class="fa-solid fa-pen" aria-hidden="true"></i>
+          تعديل
+        </a>
+        @if (isAdmin()) {
+          <button
+            type="button"
+            class="ap-btn"
+            [class.ap-btn--danger]="!laundry.isBanned"
+            [class.ap-btn--success]="laundry.isBanned"
+            [disabled]="isBusy()"
+            (click)="onToggleBan(laundry)"
+          >
+            <i class="fa-solid" [class.fa-ban]="!laundry.isBanned" [class.fa-lock-open]="laundry.isBanned" aria-hidden="true"></i>
+            {{ laundry.isBanned ? 'إلغاء الحظر' : 'حظر' }}
+          </button>
+          <button type="button" class="ap-btn ap-btn--danger" [disabled]="isBusy()" (click)="onDelete(laundry)">
+            @if (isBusy()) {
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            } @else {
+              <i class="fa-solid fa-trash" aria-hidden="true"></i>
+            }
+            حذف
+          </button>
+        }
+      }
+    </app-account-page-header>
+
+    @if (laundry.isDeleted) {
+      <div class="ap-alert ap-alert--muted" role="status">
+        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+        <span>
+          هذا الحساب محذوف{{ laundry.deletedAt ? ' منذ ' + formatDate(laundry.deletedAt) : '' }} ومتاح للعرض فقط.
+        </span>
+      </div>
+    }
+
+    <div class="ap-columns">
+      <section class="ap-card" aria-labelledby="ld-info">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-store" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="ld-info">بيانات المغسلة</h2>
+        </div>
+        <dl class="ap-fields">
+          <div class="ap-field">
+            <dt>رقم الدخول</dt>
+            <dd><app-phone-actions [phone]="laundry.phoneNumber" [verified]="laundry.phoneNumberConfirmed" /></dd>
+          </div>
+          <div class="ap-field">
+            <dt>المدينة</dt>
+            <dd [class.ap-muted]="!laundry.cityName">{{ laundry.cityName || 'غير محددة' }}</dd>
+          </div>
+          <div class="ap-field ap-field--wide">
+            <dt>العنوان</dt>
+            <dd [class.ap-muted]="!laundry.address">{{ laundry.address || 'غير محدد' }}</dd>
+          </div>
+          <div class="ap-field">
+            <dt>الموقع على الخريطة</dt>
+            <dd>
+              @if (location(); as point) {
+                <a class="ap-link" [href]="mapsUrl(point)" target="_blank" rel="noopener noreferrer">
+                  <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+                  فتح في الخريطة
+                </a>
+              } @else {
+                <span class="ap-muted">غير محدد</span>
+              }
+            </dd>
+          </div>
+          <div class="ap-field">
+            <dt>تاريخ الإنشاء</dt>
+            <dd [title]="formatDateTime(laundry.createdAt)">{{ formatDate(laundry.createdAt) }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="ap-card" aria-labelledby="ld-owner">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-user-tie" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="ld-owner">المالك</h2>
+        </div>
+        <dl class="ap-fields">
+          <div class="ap-field">
+            <dt>اسم المالك</dt>
+            <dd [class.ap-muted]="!laundry.ownerName">{{ laundry.ownerName || '—' }}</dd>
+          </div>
+          <div class="ap-field">
+            <dt>رقم المالك</dt>
+            <dd>
+              @if (laundry.ownerPhoneNumber) {
+                <app-phone-actions [phone]="laundry.ownerPhoneNumber" />
+              } @else {
+                <span class="ap-muted">—</span>
+              }
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="ap-card" aria-labelledby="ld-wallet">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="ld-wallet">المحفظة والتوصيل</h2>
+        </div>
+        <dl class="ap-fields">
+          <div class="ap-field ap-field--wide">
+            <dt>رصيد المحفظة</dt>
+            <dd class="ap-money">{{ money(laundry.walletBalance) }}</dd>
+          </div>
+          <div class="ap-field">
+            <dt>رسوم التوصيل الأساسية</dt>
+            <dd>{{ money(laundry.baseDeliveryFee) }}</dd>
+          </div>
+          <div class="ap-field">
+            <dt>سعر الكيلومتر</dt>
+            <dd>{{ money(laundry.deliveryPricePerKm) }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="ap-card" aria-labelledby="ld-image">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-image" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="ld-image">صورة المغسلة</h2>
+        </div>
+        <app-image-preview class="ld-image" label="صورة المغسلة" [src]="laundry.imageUrl" />
+      </section>
+    </div>
+  </div>
+} @else if (recordId() === null || record.status() === 'not-found') {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-store-slash" aria-hidden="true"></i>
+    <strong>المغسلة غير موجودة</strong>
+    <p>ربما تم حذفها أو أن الرابط غير صحيح.</p>
+    <a class="ap-btn" routerLink="/laundries">العودة إلى المغاسل</a>
+  </div>
+} @else if (record.status() === 'error') {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+    <strong>تعذّر تحميل بيانات المغسلة</strong>
+    <p>{{ record.error()?.message }}</p>
+    <button type="button" class="ap-btn ap-btn--brand" (click)="record.reload()">
+      <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+      إعادة المحاولة
+    </button>
+  </div>
+} @else {
+  <div class="ap" aria-busy="true" aria-label="جارٍ تحميل بيانات المغسلة">
+    <div class="ap-skeleton" style="height: 110px"></div>
+    <div class="ap-columns">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="ap-skeleton" style="height: 190px"></div>
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,208 @@
+@if (mode() === 'edit' && (recordId() === null || record.status() === 'not-found')) {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-store-slash" aria-hidden="true"></i>
+    <strong>المغسلة غير موجودة</strong>
+    <p>ربما تم حذفها أو أن الرابط غير صحيح.</p>
+    <a class="ap-btn" routerLink="/laundries">العودة إلى المغاسل</a>
+  </div>
+} @else if (mode() === 'edit' && record.status() === 'error') {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+    <strong>تعذّر تحميل بيانات المغسلة</strong>
+    <p>{{ record.error()?.message }}</p>
+    <button type="button" class="ap-btn ap-btn--brand" (click)="record.reload()">إعادة المحاولة</button>
+  </div>
+} @else if (mode() === 'edit' && !record.value()) {
+  <div class="ap" aria-busy="true" aria-label="جارٍ تحميل بيانات المغسلة">
+    <div class="ap-skeleton" style="height: 110px"></div>
+    <div class="ap-skeleton" style="height: 420px"></div>
+  </div>
+} @else if (record.value()?.isDeleted) {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-lock" aria-hidden="true"></i>
+    <strong>لا يمكن تعديل حساب محذوف</strong>
+    <p>الحسابات المحذوفة متاحة للعرض فقط.</p>
+    <a class="ap-btn" [routerLink]="['/laundries', record.value()!.id]">عرض المغسلة</a>
+  </div>
+} @else {
+  <form class="ap" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    <app-account-page-header
+      backLink="/laundries"
+      backLabel="المغاسل"
+      [crumb]="mode() === 'create' ? 'إضافة مغسلة' : 'تعديل'"
+      [title]="mode() === 'create' ? 'إضافة مغسلة جديدة' : 'تعديل ' + (record.value()?.name ?? '')"
+      [subtitle]="mode() === 'create' ? 'سيتم تفعيل رقم الدخول مباشرة دون الحاجة لرمز تحقق' : '#' + recordId()"
+      [imageUrl]="record.value()?.imageUrl ?? null"
+      icon="fa-store"
+    />
+
+    <fieldset class="ap-columns" [disabled]="isSubmitting()">
+      <section class="ap-card" aria-labelledby="lf-account">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-store" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="lf-account">بيانات المغسلة والدخول</h2>
+        </div>
+        <div class="ap-form-grid">
+          <div class="ap-input ap-input--wide">
+            <label class="form-label" for="lf-name">اسم المغسلة <span class="ap-required">*</span></label>
+            <input id="lf-name" class="form-control" formControlName="name" autocomplete="off" />
+            <app-form-error [control]="form.controls.name" label="اسم المغسلة" />
+          </div>
+
+          <div class="ap-input">
+            <label class="form-label" for="lf-phone">رقم الدخول (موبايل) <span class="ap-required">*</span></label>
+            <input
+              id="lf-phone"
+              class="form-control"
+              type="tel"
+              inputmode="tel"
+              dir="ltr"
+              placeholder="0912345678"
+              formControlName="phoneNumber"
+              autocomplete="off"
+              (blur)="normalizePhone('phoneNumber')"
+            />
+            <app-form-error [control]="form.controls.phoneNumber" label="رقم الدخول" />
+            @if (mode() === 'edit') {
+              <div class="ap-hint"><i class="fa-solid fa-circle-info" aria-hidden="true"></i>{{ phoneHint }}</div>
+            }
+          </div>
+
+          <div class="ap-input">
+            <label class="form-label" for="lf-password">
+              كلمة المرور
+              @if (mode() === 'create') {
+                <span class="ap-required">*</span>
+              } @else {
+                <span class="ap-optional">(اختياري)</span>
+              }
+            </label>
+            <app-password-input id="lf-password" formControlName="password" autocomplete="new-password" />
+            <app-form-error [control]="form.controls.password" label="كلمة المرور" />
+            @if (mode() === 'edit') {
+              <div class="ap-hint"><i class="fa-solid fa-circle-info" aria-hidden="true"></i>{{ passwordHint }}</div>
+            }
+          </div>
+
+          <div class="ap-input">
+            <label class="form-label">المدينة <span class="ap-required">*</span></label>
+            <app-searchable-select
+              formControlName="cityId"
+              [options]="cities.options()"
+              [isDisabled]="cities.isLoading() || isSubmitting()"
+              [placeholder]="cities.isLoading() ? 'جارٍ تحميل المدن...' : 'اختر المدينة'"
+              searchPlaceholder="بحث عن مدينة..."
+            />
+            <app-form-error [control]="form.controls.cityId" label="المدينة" />
+            @if (cities.hasFailed()) {
+              <div class="ap-hint">
+                تعذّر تحميل المدن.
+                <button type="button" class="btn btn-link btn-sm p-0" (click)="cities.ensureLoaded()">إعادة المحاولة</button>
+              </div>
+            }
+          </div>
+
+          <div class="ap-input">
+            <label class="form-label" for="lf-address">العنوان <span class="ap-required">*</span></label>
+            <input id="lf-address" class="form-control" formControlName="address" autocomplete="off" />
+            <app-form-error [control]="form.controls.address" label="العنوان" />
+          </div>
+
+          <div class="ap-input">
+            <label class="form-label" for="lf-lat">خط العرض <span class="ap-optional">(اختياري)</span></label>
+            <input id="lf-lat" class="form-control" dir="ltr" inputmode="decimal" placeholder="32.8872" formControlName="latitude" />
+            <app-form-error [control]="form.controls.latitude" label="خط العرض" />
+          </div>
+
+          <div class="ap-input">
+            <label class="form-label" for="lf-lng">خط الطول <span class="ap-optional">(اختياري)</span></label>
+            <input id="lf-lng" class="form-control" dir="ltr" inputmode="decimal" placeholder="13.1913" formControlName="longitude" />
+            <app-form-error [control]="form.controls.longitude" label="خط الطول" />
+          </div>
+        </div>
+      </section>
+
+      <div class="lf-side">
+        <section class="ap-card" aria-labelledby="lf-owner">
+          <div class="ap-card__head">
+            <i class="fa-solid fa-user-tie" aria-hidden="true"></i>
+            <h2 class="ap-card__title" id="lf-owner">المالك</h2>
+          </div>
+          <div class="ap-form-grid">
+            <div class="ap-input">
+              <label class="form-label" for="lf-owner-name">اسم المالك <span class="ap-required">*</span></label>
+              <input id="lf-owner-name" class="form-control" formControlName="ownerName" autocomplete="off" />
+              <app-form-error [control]="form.controls.ownerName" label="اسم المالك" />
+            </div>
+            <div class="ap-input">
+              <label class="form-label" for="lf-owner-phone">رقم المالك <span class="ap-required">*</span></label>
+              <input
+                id="lf-owner-phone"
+                class="form-control"
+                type="tel"
+                inputmode="tel"
+                dir="ltr"
+                placeholder="0912345678"
+                formControlName="ownerPhoneNumber"
+                autocomplete="off"
+                (blur)="normalizePhone('ownerPhoneNumber')"
+              />
+              <app-form-error [control]="form.controls.ownerPhoneNumber" label="رقم المالك" />
+            </div>
+          </div>
+        </section>
+
+        <section class="ap-card" aria-labelledby="lf-delivery">
+          <div class="ap-card__head">
+            <i class="fa-solid fa-truck-fast" aria-hidden="true"></i>
+            <h2 class="ap-card__title" id="lf-delivery">رسوم التوصيل</h2>
+          </div>
+          <div class="ap-form-grid">
+            <div class="ap-input">
+              <label class="form-label" for="lf-base-fee">الرسوم الأساسية <span class="ap-required">*</span></label>
+              <input id="lf-base-fee" class="form-control" dir="ltr" inputmode="decimal" formControlName="baseDeliveryFee" />
+              <app-form-error [control]="form.controls.baseDeliveryFee" label="الرسوم الأساسية" />
+            </div>
+            <div class="ap-input">
+              <label class="form-label" for="lf-km-fee">سعر الكيلومتر <span class="ap-required">*</span></label>
+              <input id="lf-km-fee" class="form-control" dir="ltr" inputmode="decimal" formControlName="deliveryPricePerKm" />
+              <app-form-error [control]="form.controls.deliveryPricePerKm" label="سعر الكيلومتر" />
+            </div>
+          </div>
+        </section>
+
+        <section class="ap-card" aria-labelledby="lf-image">
+          <div class="ap-card__head">
+            <i class="fa-solid fa-image" aria-hidden="true"></i>
+            <h2 class="ap-card__title" id="lf-image">صورة المغسلة</h2>
+          </div>
+          <app-image-picker
+            label="الصورة (اختياري)"
+            [currentUrl]="record.value()?.imageUrl ?? null"
+            [disabled]="isSubmitting()"
+            (fileChange)="pendingImage.set($event)"
+          />
+        </section>
+      </div>
+    </fieldset>
+
+    <div class="ap-bar">
+      <a
+        class="ap-btn"
+        [routerLink]="mode() === 'create' ? ['/laundries'] : ['/laundries', recordId()]"
+        [class.disabled]="isSubmitting()"
+      >
+        إلغاء
+      </a>
+      <button type="submit" class="ap-btn ap-btn--brand" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          جارٍ الحفظ…
+        } @else {
+          <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+          {{ mode() === 'create' ? 'إضافة المغسلة' : 'حفظ التعديلات' }}
+        }
+      </button>
+    </div>
+  </form>
+}

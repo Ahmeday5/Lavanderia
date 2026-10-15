@@ -31,10 +31,10 @@
     <div class="lp-search">
       <i class="fa-solid fa-magnifying-glass lp-search__icon"></i>
       <input
-        type="text"
+        type="search"
         class="lp-search__input"
-        placeholder="ابحث بالاسم أو رقم الهاتف..."
-        aria-label="بحث عن مغسلة بالاسم أو رقم الهاتف"
+        placeholder="ابحث بالاسم، الرقم، المالك، العنوان أو #الرقم التعريفي..."
+        aria-label="بحث عن مغسلة"
         [ngModel]="list.searchInput()"
         (ngModelChange)="list.setSearch($event)"
         (keydown.escape)="list.clearSearch()"
@@ -45,6 +45,8 @@
         </button>
       }
     </div>
+
+    <app-deleted-toggle [(checked)]="includeDeleted" [disabled]="list.isLoading()" />
 
     <div class="lp-toolbar__actions">
       <button
@@ -58,11 +60,15 @@
         <span>الحد الأدنى للتوصيل</span>
       </button>
       <app-refresh-button />
+      <a class="acct-add-btn" routerLink="/laundries/new">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        <span>إضافة مغسلة</span>
+      </a>
     </div>
   </div>
 
   <!-- ── Content ── -->
-  <div class="lp-panel">
+  <div class="lp-panel" [attr.aria-busy]="list.isLoading()">
     @if (list.isLoading()) {
       @for (i of [1, 2, 3, 4, 5]; track i) {
         <div class="lp-skel" [style.animation-delay.ms]="i * 60"></div>
@@ -80,13 +86,13 @@
     } @else if (list.items().length === 0) {
       <div class="lp-empty">
         <div class="lp-empty__icon">
-          <i class="fa-solid fa-store-slash"></i>
+          <i class="fa-solid" [class.fa-magnifying-glass]="list.search()" [class.fa-store-slash]="!list.search()"></i>
         </div>
         <div class="lp-empty__title">
-          {{ list.search() ? 'لا توجد نتائج مطابقة' : 'لا توجد مغاسل مسجّلة بعد' }}
+          {{ list.search() ? 'لا توجد نتائج مطابقة لـ «' + list.search() + '»' : 'لا توجد مغاسل مسجّلة بعد' }}
         </div>
         <div class="lp-empty__subtitle">
-          {{ list.search() ? 'جرّب اسمًا أو رقم هاتف آخر' : 'ستظهر المغاسل هنا فور تسجيلها عبر التطبيق' }}
+          {{ list.search() ? 'جرّب اسمًا أو رقم هاتف آخر' : 'أضف أول مغسلة أو انتظر تسجيلها عبر التطبيق' }}
         </div>
       </div>
     } @else {
@@ -98,63 +104,87 @@
               <th scope="col">رقم الهاتف</th>
               <th scope="col">المدينة</th>
               <th scope="col">الحالة</th>
-              <th scope="col">تاريخ التسجيل</th>
+              <th scope="col">تاريخ الإنشاء</th>
               <th scope="col"><span class="visually-hidden">الإجراءات</span></th>
             </tr>
           </thead>
           <tbody>
             @for (laundry of list.items(); track laundry.id) {
-              <tr class="lp-row" [class.lp-row--banned]="laundry.isBanned">
+              <tr
+                class="lp-row"
+                [class.lp-row--banned]="laundry.isBanned && !laundry.isDeleted"
+                [class.acct-row--deleted]="laundry.isDeleted"
+              >
                 <td data-label="المغسلة">
-                  <div class="lp-laundry">
-                    <div class="lp-laundry__avatar">
+                  <a class="lp-laundry" [routerLink]="['/laundries', laundry.id]">
+                    <div class="lp-laundry__avatar acct-avatar">
                       <i class="fa-solid fa-shirt"></i>
                     </div>
-                    <div class="lp-laundry__name">{{ laundry.name }}</div>
-                  </div>
+                    <div>
+                      <div class="lp-laundry__name">{{ laundry.name || 'بدون اسم' }}</div>
+                      <div class="lp-laundry__id">#{{ laundry.id }}</div>
+                    </div>
+                  </a>
                 </td>
                 <td data-label="رقم الهاتف">
                   <app-phone-actions [phone]="laundry.phoneNumber" [verified]="laundry.phoneNumberConfirmed" />
                 </td>
                 <td data-label="المدينة">{{ laundry.cityName || '—' }}</td>
                 <td data-label="الحالة">
-                  @if (laundry.isBanned) {
-                    <span class="lp-status lp-status--banned">
-                      <i class="fa-solid fa-ban"></i>
-                      محظورة
-                    </span>
-                  } @else {
-                    <span class="lp-status lp-status--active">
-                      <i class="fa-solid fa-circle-check"></i>
-                      نشطة
-                    </span>
-                  }
+                  <app-account-badges [badges]="badges(laundry)" />
                 </td>
-                <td class="lp-date" data-label="تاريخ التسجيل">
+                <td class="lp-date" data-label="تاريخ الإنشاء">
                   <time [attr.datetime]="laundry.createdAt" [title]="formatDateTime(laundry.createdAt)">
                     {{ formatDate(laundry.createdAt) }}
                   </time>
                 </td>
                 <td class="lp-actions">
-                  <app-owner-orders-link ownerType="Laundry" [ownerId]="laundry.id" [ownerName]="laundry.name" />
-                  <button
-                    type="button"
-                    class="lp-ban-btn"
-                    [class.lp-ban-btn--unban]="laundry.isBanned"
-                    [disabled]="pending.has(laundry.id)"
-                    [attr.aria-busy]="pending.has(laundry.id)"
-                    (click)="onToggleBan(laundry)"
-                  >
-                    @if (pending.has(laundry.id)) {
-                      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    } @else if (laundry.isBanned) {
-                      <i class="fa-solid fa-lock-open"></i>
-                      <span>إلغاء الحظر</span>
-                    } @else {
-                      <i class="fa-solid fa-ban"></i>
-                      <span>حظر</span>
+                  <div class="acct-actions">
+                    <a class="acct-icon-btn" [routerLink]="['/laundries', laundry.id]" title="عرض التفاصيل" aria-label="عرض التفاصيل">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                    @if (!laundry.isDeleted) {
+                      <a
+                        class="acct-icon-btn"
+                        [routerLink]="['/laundries', laundry.id, 'edit']"
+                        title="تعديل"
+                        aria-label="تعديل"
+                      >
+                        <i class="fa-solid fa-pen"></i>
+                      </a>
+                      <app-owner-orders-link ownerType="Laundry" [ownerId]="laundry.id" [ownerName]="laundry.name" />
+                      @if (isAdmin()) {
+                        <button
+                          type="button"
+                          class="lp-ban-btn"
+                          [class.lp-ban-btn--unban]="laundry.isBanned"
+                          [disabled]="pending.has(laundry.id)"
+                          [attr.aria-busy]="pending.has(laundry.id)"
+                          (click)="onToggleBan(laundry)"
+                        >
+                          @if (pending.has(laundry.id)) {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                          } @else if (laundry.isBanned) {
+                            <i class="fa-solid fa-lock-open"></i>
+                            <span>إلغاء الحظر</span>
+                          } @else {
+                            <i class="fa-solid fa-ban"></i>
+                            <span>حظر</span>
+                          }
+                        </button>
+                        <button
+                          type="button"
+                          class="acct-icon-btn acct-icon-btn--danger"
+                          title="حذف"
+                          aria-label="حذف"
+                          [disabled]="pending.has(laundry.id)"
+                          (click)="onDelete(laundry)"
+                        >
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      }
                     }
-                  </button>
+                  </div>
                 </td>
               </tr>
             }
@@ -167,6 +197,7 @@
   <app-pagination
     [pageIndex]="list.pageIndex()"
     [pageSize]="list.pageSize()"
+    [pageSizeOptions]="pageSizeOptions"
     [count]="list.count()"
     [totalPages]="list.totalPages()"
     [disabled]="list.isLoading()"

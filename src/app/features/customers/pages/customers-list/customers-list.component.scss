@@ -6,6 +6,7 @@
 }
 
 .cup {
+  --acct-accent: #6d4ab8;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -103,6 +104,14 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cup-toolbar__end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-inline-start: auto;
 }
 
 .cup-search {
@@ -230,6 +239,12 @@
   display: flex;
   align-items: center;
   gap: 11px;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover .cup-customer__name {
+    color: #6d4ab8;
+  }
 }
 
 .cup-avatar {
@@ -283,33 +298,7 @@
   text-align: end;
 }
 
-.cup-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 11px;
-  border-radius: 999px;
-  font-size: 10.5px;
-  font-weight: 600;
-
-  i {
-    font-size: 6px;
-  }
-
-  &--active {
-    background: rgba(34, 197, 94, 0.12);
-    color: #16a34a;
-  }
-
-  &--banned {
-    background: var(--re-l);
-    color: var(--re);
-
-    i {
-      font-size: 9px;
-    }
-  }
-}
+/* Row actions & add button: global `.acct-*` (styles.scss), tinted via `--acct-accent`. */
 
 .cup-ban-btn {
   display: inline-flex;

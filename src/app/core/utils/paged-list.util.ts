@@ -37,6 +37,11 @@ export interface PagedList<T> {
   goToPage(page: number): void;
   setPageSize(size: number): void;
   setSearch(term: string): void;
+  /**
+   * Commits `term` immediately (no debounce) — for a search coming from
+   * outside the box, e.g. the URL. Loads unless the list already shows it.
+   */
+  applySearch(term: string): void;
   clearSearch(): void;
   /** Local, optimistic edit of the visible rows (no refetch). */
   updateItems(fn: (items: T[]) => T[]): void;
@@ -77,6 +82,9 @@ export function createPagedList<T>(
 
   const load$ = new Subject<void>();
   const searchInput$ = new Subject<string>();
+  /** False until the first load is requested — `applySearch` must trigger it even for `''`. */
+  let hasRequestedLoad = false;
+  load$.subscribe(() => (hasRequestedLoad = true));
 
   load$
     .pipe(
@@ -164,6 +172,14 @@ export function createPagedList<T>(
     setSearch: (term) => {
       searchInput.set(term);
       searchInput$.next(term);
+    },
+    applySearch: (term) => {
+      const trimmed = term.trim();
+      searchInput.set(trimmed);
+      if (hasRequestedLoad && trimmed === search()) return;
+      search.set(trimmed);
+      pageIndex.set(1);
+      load$.next();
     },
     clearSearch: () => {
       searchInput.set('');

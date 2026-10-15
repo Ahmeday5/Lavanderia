@@ -7,7 +7,9 @@ import {
 } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ApiResponse } from '../models/api-response.model';
+import { ApiResponse, ApiResult } from '../models/api-response.model';
+
+export type MutationMethod = 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export interface RequestOptions {
   params?: Record<string, unknown>;
@@ -75,6 +77,28 @@ export class ApiService {
       .pipe(map((res) => this.unwrap<T>(res)));
   }
 
+  /**
+   * Like the verb methods, but keeps the envelope's `message` next to the
+   * unwrapped `data` — for mutations whose server copy ("تم حفظ …") is shown
+   * to the user as-is. Any 2xx is a success, whatever `statusCode` the body
+   * carries (creates answer HTTP 200 with `statusCode: 201`).
+   */
+  send<T>(
+    method: MutationMethod,
+    endpoint: string,
+    body: unknown = null,
+    options: RequestOptions = {},
+  ): Observable<ApiResult<T>> {
+    return this.http
+      .request<ApiResponse<T> | T>(method, this.url(endpoint), { ...this.opts(options), body })
+      .pipe(
+        map((res) => ({
+          data: this.unwrap<T>(res),
+          message: this.messageOf(res),
+        })),
+      );
+  }
+
   // ─────────── internals ───────────
 
   private url(endpoint: string): string {
@@ -113,6 +137,12 @@ export class ApiService {
       return (env.data ?? (env as unknown as T)) as T;
     }
     return res as T;
+  }
+
+  private messageOf(res: unknown): string | null {
+    if (!res || typeof res !== 'object' || !('message' in res)) return null;
+    const message = (res as ApiResponse<unknown>).message;
+    return typeof message === 'string' && message.trim() ? message.trim() : null;
   }
 
   private normalizeBase(raw: string): string {

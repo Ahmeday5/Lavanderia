@@ -1,0 +1,140 @@
+@if (ui.isOpen()) {
+  <div class="gs-backdrop" (click)="close()" role="presentation">
+    <div
+      class="gs"
+      role="dialog"
+      aria-modal="true"
+      aria-label="البحث الشامل"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="gs-input">
+        @if (state().kind === 'loading') {
+          <span class="spinner-border spinner-border-sm gs-input__icon" role="status" aria-label="جارٍ البحث"></span>
+        } @else {
+          <i class="fa-solid fa-magnifying-glass gs-input__icon" aria-hidden="true"></i>
+        }
+        <input
+          #searchInput
+          type="text"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-controls="gs-results"
+          [attr.aria-expanded]="sections().length > 0"
+          [attr.aria-activedescendant]="activeKey() ? 'gs-opt-' + activeKey() : null"
+          placeholder="ابحث في المغاسل، العملاء، السائقين، الطلبات، المدن والخدمات..."
+          autocomplete="off"
+          spellcheck="false"
+          [value]="query()"
+          (input)="onInput($any($event.target).value)"
+          (keydown)="onInputKeydown($event)"
+        />
+        <kbd class="gs-kbd" (click)="close()">Esc</kbd>
+      </div>
+
+      <div
+        class="gs-results"
+        id="gs-results"
+        role="listbox"
+        aria-label="نتائج البحث"
+        [class.gs-results--stale]="state().kind === 'loading'"
+        #results
+      >
+        @switch (state().kind) {
+          @case ('idle') {
+            <div class="gs-state">
+              <i class="fa-solid fa-keyboard" aria-hidden="true"></i>
+              <strong>اكتب للبحث</strong>
+              <span>بالاسم، رقم الهاتف بأي صيغة، أو الرقم التعريفي مثل ‎#123</span>
+            </div>
+          }
+          @case ('error') {
+            <div class="gs-state gs-state--error" role="alert">
+              <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+              <strong>تعذّر إجراء البحث</strong>
+              @if (state(); as s) {
+                @if (s.kind === 'error') {
+                  <span>{{ s.message }}</span>
+                }
+              }
+            </div>
+          }
+          @case ('loading') {
+            @if (rows().length === 0) {
+              <div class="gs-state">
+                <span class="spinner-border text-secondary" role="status" aria-hidden="true"></span>
+                <span>جارٍ البحث…</span>
+              </div>
+            }
+          }
+          @case ('done') {
+            @if (rows().length === 0) {
+              <div class="gs-state">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <strong>لا توجد نتائج لـ «{{ query().trim() }}»</strong>
+                <span>جرّب كلمة أخرى أو رقمًا مختلفًا</span>
+              </div>
+            }
+          }
+        }
+
+        @for (row of rows(); track row.section.key) {
+          <section class="gs-group" role="group" [attr.aria-label]="row.section.label">
+            <header class="gs-group__head">
+              <span>
+                <i class="fa-solid" [class]="row.section.icon" aria-hidden="true"></i>
+                {{ row.section.label }} ({{ row.section.count }})
+              </span>
+              @if (row.section.viewAll; as viewAll) {
+                <button type="button" class="gs-group__all" (click)="open(viewAll)">
+                  عرض الكل
+                  <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                </button>
+              }
+            </header>
+
+            @for (item of row.entries; track item.entry.key) {
+              <div
+                class="gs-item"
+                role="option"
+                [id]="'gs-opt-' + item.entry.key"
+                [class.gs-item--active]="item.index === activeIndex()"
+                [attr.aria-selected]="item.index === activeIndex()"
+                (mousemove)="setActive(item.index)"
+                (click)="open(item.entry.link)"
+              >
+                <span class="gs-item__icon">
+                  <app-thumb [src]="item.entry.imageUrl" [alt]="item.entry.primary" [icon]="item.entry.icon" />
+                </span>
+                <span class="gs-item__text">
+                  <span class="gs-item__primary">
+                    <app-highlight [text]="item.entry.primary" [query]="query()" />
+                  </span>
+                  @if (item.entry.secondary) {
+                    <span class="gs-item__secondary">
+                      <app-highlight [text]="item.entry.secondary" [query]="query()" />
+                    </span>
+                  }
+                </span>
+                @if (item.entry.badges.length) {
+                  <app-account-badges class="gs-item__badges" [badges]="item.entry.badges" />
+                }
+                <i class="fa-solid fa-arrow-turn-down gs-item__enter" aria-hidden="true"></i>
+              </div>
+            }
+          </section>
+        }
+      </div>
+
+      <footer class="gs-footer" aria-hidden="true">
+        <span><kbd>↑</kbd><kbd>↓</kbd> للتنقل</span>
+        <span><kbd>Enter</kbd> للفتح</span>
+        <span><kbd>Esc</kbd> للإغلاق</span>
+        @if (state(); as s) {
+          @if (s.kind === 'done' && s.total > 0) {
+            <span class="gs-footer__total">{{ s.total }} نتيجة</span>
+          }
+        }
+      </footer>
+    </div>
+  </div>
+}

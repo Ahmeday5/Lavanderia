@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, forkJoin, of } from 'rxjs';
@@ -9,6 +18,8 @@ import { ApiError } from '../../../../core/models/api-response.model';
 import { apiErrorToMessage } from '../../../../core/utils/api-error.util';
 import { createPagedList } from '../../../../core/utils/paged-list.util';
 import { withLocalSearch } from '../../../../core/utils/local-search.util';
+import { parseRouteId } from '../../../../core/utils/record-loader.util';
+import { bindListSearchToUrl } from '../../../../core/utils/url-search-sync.util';
 import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
 import { ThumbComponent } from '../../../../shared/components/thumb/thumb.component';
 import { RefreshButtonComponent } from '../../../../shared/components/refresh-button/refresh-button.component';
@@ -44,8 +55,12 @@ export class ServicesListComponent {
   private readonly dialog = inject(DialogService);
   private readonly toast = inject(ToastService);
 
-  // Started manually at the end of the constructor: a cache hit resolves
-  // synchronously, so `onPage` must not fire before `countsRequest$` is wired.
+  /** Router-bound `?open=` — a service id to expand on arrival. */
+  readonly open = input<string>();
+  private autoOpenedId: number | null = null;
+
+  // Started at the end of the constructor (by the URL binding): a cache hit
+  // resolves synchronously, so `onPage` must not fire before `countsRequest$` is wired.
   protected readonly list = createPagedList(
     withLocalSearch((query) => this.servicesService.list(query), (service) => [service.name]),
     {
@@ -128,7 +143,22 @@ export class ServicesListComponent {
       .refreshes$.pipe(takeUntilDestroyed())
       .subscribe(() => this.loadExpandedItems());
 
-    this.list.reload();
+    // `?open=<serviceId>` (global-search links) expands that service once it is on the page.
+    effect(() => {
+      const id = parseRouteId(this.open());
+      const visible = this.list.items().some((service) => service.id === id);
+      if (id === null || !visible || this.autoOpenedId === id) return;
+      untracked(() => {
+        this.autoOpenedId = id;
+        if (this.expandedServiceId() !== id) {
+          const service = this.list.items().find((s) => s.id === id);
+          if (service) this.toggleExpand(service);
+        }
+      });
+    });
+
+    // The URL's `?search=` drives the first load (and keeps later searches shareable).
+    bindListSearchToUrl(this.list);
   }
 
   protected itemCount(serviceId: number): number | null {

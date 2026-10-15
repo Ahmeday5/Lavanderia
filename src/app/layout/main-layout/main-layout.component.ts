@@ -4,12 +4,19 @@ import { TopbarComponent } from './topbar/topbar.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { LayoutService } from '../../core/services/layout.service';
+import { GlobalSearchPaletteComponent } from '../../features/search/components/global-search-palette/global-search-palette.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, TopbarComponent, SidebarComponent, ConfirmDialogComponent],
+  imports: [
+    RouterOutlet,
+    TopbarComponent,
+    SidebarComponent,
+    ConfirmDialogComponent,
+    GlobalSearchPaletteComponent,
+  ],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss',
 })

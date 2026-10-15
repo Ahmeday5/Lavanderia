@@ -1,7 +1,8 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { APP_CURRENCY } from '../../core/constants/currency.constants';
 import { isHtmlBlank } from '../utils/html-content.util';
-import { parseAmount } from '../utils/number-parse.util';
+import { parseAmount, parseDecimal, parseInteger } from '../utils/number-parse.util';
+import { isLibyanMobile, isLibyanPhone } from '../../core/utils/phone.util';
 
 /**
  * Maps a control's first failing validator into a human-readable message.
@@ -81,6 +82,15 @@ function resolveMessage(
   if (errors['amount'] !== undefined) {
     return `${label} يجب أن يكون قيمة رقمية صالحة (حتى ${APP_CURRENCY.maxFractionDigits} أرقام عشرية)`;
   }
+  if (errors['libyanMobile'] !== undefined) {
+    return `${label} يجب أن يكون رقم موبايل ليبي صحيح (مثال: 0912345678)`;
+  }
+  if (errors['libyanPhone'] !== undefined) {
+    return `${label} يجب أن يكون رقم هاتف ليبي صحيح (موبايل أو أرضي)`;
+  }
+  if (errors['number'] !== undefined) {
+    return `${label} يجب أن يكون رقمًا صالحًا`;
+  }
 
   // Unknown validator — show the raw key as a graceful fallback.
   const firstKey = Object.keys(errors)[0];
@@ -116,6 +126,73 @@ export function phoneValidator(): ValidatorFn {
     return pattern.test(value) && digits.length >= 7 && digits.length <= 15
       ? null
       : { phone: true };
+  };
+}
+
+/** Libyan mobile number (see `LIBYAN_MOBILE_PATTERN`). Empty passes — combine with `required`. */
+export function libyanMobileValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value as string | null;
+    if (!value?.trim()) return null;
+    return isLibyanMobile(value) ? null : { libyanMobile: true };
+  };
+}
+
+/** Libyan mobile or landline number. Empty passes — combine with `required`. */
+export function libyanPhoneValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value as string | null;
+    if (!value?.trim()) return null;
+    return isLibyanPhone(value) ? null : { libyanPhone: true };
+  };
+}
+
+/**
+ * Number typed as text (Arabic-Indic digits accepted), optionally a whole
+ * number, within an optional range. Reports `number` for a bad format and the
+ * standard `min` / `max` keys for the range. Empty passes.
+ */
+export function numberValidator(
+  opts: { min?: number; max?: number; integer?: boolean } = {},
+): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const raw = control.value as string | null;
+    if (raw == null || String(raw).trim() === '') return null;
+
+    const value = opts.integer ? parseInteger(String(raw)) : parseDecimal(String(raw));
+    if (value === null) return { number: true };
+    if (opts.min !== undefined && value < opts.min) return { min: { min: opts.min, actual: value } };
+    if (opts.max !== undefined && value > opts.max) return { max: { max: opts.max, actual: value } };
+    return null;
+  };
+}
+
+/**
+ * Cross-field validator for `YYYY-MM-DD` controls: `endControl` must be
+ * strictly after `startControl`. Attach to the FormGroup; the error lands on
+ * the end control as `dateOrder` (carrying `message`, which `firstError`
+ * shows as-is). Skipped while either date is empty.
+ */
+export function dateOrderValidator(
+  startControl: string,
+  endControl: string,
+  message: string,
+): ValidatorFn {
+  return (group: AbstractControl): ValidationErrors | null => {
+    const start = group.get(startControl);
+    const end = group.get(endControl);
+    if (!start || !end) return null;
+
+    const invalid = !!start.value && !!end.value && String(end.value) <= String(start.value);
+    const { dateOrder: _previous, ...rest } = end.errors ?? {};
+    if (invalid) {
+      end.setErrors({ ...rest, dateOrder: message });
+      return { dateOrder: true };
+    }
+    if (end.errors?.['dateOrder'] !== undefined) {
+      end.setErrors(Object.keys(rest).length ? rest : null);
+    }
+    return null;
   };
 }
 

@@ -12,6 +12,16 @@ export const AUTH_ENDPOINTS = {
   me: 'auth/me',
 } as const;
 
+/**
+ * Dashboard staff roles. `Editor` can view, create and edit; the destructive
+ * or trust-granting actions (delete, ban, driver approval, adding drivers)
+ * are `Admin`-only — the backend answers 403 otherwise.
+ */
+export const STAFF_ROLES = {
+  admin: 'Admin',
+  editor: 'Editor',
+} as const;
+
 /** Default route to send an authenticated user to after login/guard redirects. */
 export const DEFAULT_AUTHENTICATED_ROUTE = '/dashboard';
 

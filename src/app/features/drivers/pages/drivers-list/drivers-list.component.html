@@ -12,7 +12,7 @@
         </span>
         <h1 class="dp-hero__title">السائقون</h1>
         <p class="dp-hero__subtitle">
-          تابع سائقي التوصيل المسجّلين، تحقّق من جاهزيتهم، وتحكّم في تفعيل حساباتهم
+          تابع سائقي التوصيل المسجّلين، راجع مستنداتهم، وتحكّم في الموافقة على حساباتهم
         </p>
       </div>
 
@@ -30,8 +30,8 @@
       <input
         type="search"
         class="dp-search__input"
-        placeholder="ابحث بالاسم أو رقم الهاتف..."
-        aria-label="بحث عن سائق بالاسم أو رقم الهاتف"
+        placeholder="ابحث بالاسم، الرقم، الرقم الوطني، اللوحة أو المركبة..."
+        aria-label="بحث عن سائق"
         inputmode="search"
         [ngModel]="list.searchInput()"
         (ngModelChange)="list.setSearch($event)"
@@ -44,7 +44,15 @@
       }
     </div>
 
-    <app-refresh-button />
+    <app-deleted-toggle [(checked)]="includeDeleted" [disabled]="list.isLoading()" />
+
+    <div class="dp-toolbar__end">
+      <app-refresh-button />
+      <a *appHasRole="'Admin'" class="acct-add-btn" routerLink="/drivers/new">
+        <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+        إضافة سائق
+      </a>
+    </div>
   </div>
 
   <!-- ── Content ── -->
@@ -70,11 +78,11 @@
         </div>
         @if (list.search()) {
           <div class="dp-state__title">لا يوجد سائق يطابق «{{ list.search() }}»</div>
-          <div class="dp-state__text">تأكد من الاسم أو رقم الهاتف، أو جرّب جزءًا منه فقط</div>
+          <div class="dp-state__text">تأكد من الاسم أو الرقم، أو جرّب جزءًا منه فقط</div>
           <button type="button" class="dp-btn" (click)="list.clearSearch()">مسح البحث</button>
         } @else {
           <div class="dp-state__title">لا يوجد سائقون بعد</div>
-          <div class="dp-state__text">سيظهر السائقون هنا فور تسجيلهم عبر تطبيق السائق</div>
+          <div class="dp-state__text">سيظهر السائقون هنا فور تسجيلهم عبر تطبيق السائق أو إضافتهم</div>
         }
       </div>
     } @else {
@@ -85,25 +93,29 @@
               <th scope="col">السائق</th>
               <th scope="col">رقم الهاتف</th>
               <th scope="col">المدينة</th>
-              <th scope="col">الجاهزية</th>
-              <th scope="col">الحساب</th>
-              <th scope="col">تاريخ التسجيل</th>
+              <th scope="col">الحالة</th>
+              <th scope="col">تاريخ الإنشاء</th>
               <th scope="col"><span class="visually-hidden">الإجراءات</span></th>
             </tr>
           </thead>
           <tbody>
             @for (driver of list.items(); track driver.id; let i = $index) {
-              <tr class="dp-row" [class.dp-row--inactive]="!driver.isActive" [style.animation-delay.ms]="i * 30">
+              <tr
+                class="dp-row"
+                [class.dp-row--inactive]="!driver.isActive && !driver.isDeleted"
+                [class.acct-row--deleted]="driver.isDeleted"
+                [style.animation-delay.ms]="i * 30"
+              >
                 <td data-label="السائق">
-                  <div class="dp-driver">
-                    <span class="dp-avatar" [class.dp-avatar--off]="!driver.isActive" aria-hidden="true">
+                  <a class="dp-driver" [routerLink]="['/drivers', driver.id]">
+                    <span class="dp-avatar" [class.dp-avatar--off]="!driver.isActive || driver.isDeleted" aria-hidden="true">
                       {{ initials(driver.fullName) }}
                     </span>
                     <div class="dp-driver__text">
                       <span class="dp-driver__name">{{ driver.fullName || 'بدون اسم' }}</span>
                       <span class="dp-driver__id">#{{ driver.id }}</span>
                     </div>
-                  </div>
+                  </a>
                 </td>
 
                 <td data-label="رقم الهاتف">
@@ -117,48 +129,59 @@
                   </span>
                 </td>
 
-                <td data-label="الجاهزية">
-                  <span class="dp-avail" [class.dp-avail--on]="driver.isAvailable">
-                    <span class="dp-avail__dot"></span>
-                    {{ driver.isAvailable ? 'متاح الآن' : 'غير متاح' }}
-                  </span>
+                <td data-label="الحالة">
+                  <app-account-badges [badges]="badges(driver)" />
                 </td>
 
-                <td data-label="الحساب">
-                  <span class="dp-chip" [class.dp-chip--on]="driver.isActive">
-                    <i class="fa-solid" [class.fa-circle-check]="driver.isActive" [class.fa-circle-pause]="!driver.isActive"></i>
-                    {{ driver.isActive ? 'مفعّل' : 'موقوف' }}
-                  </span>
-                </td>
-
-                <td data-label="تاريخ التسجيل">
+                <td data-label="تاريخ الإنشاء">
                   <time class="dp-date" [attr.datetime]="driver.createdAt" [title]="formatDateTime(driver.createdAt)">
                     {{ formatDate(driver.createdAt) }}
                   </time>
                 </td>
 
                 <td class="dp-actions">
-                  <app-owner-orders-link ownerType="Driver" [ownerId]="driver.id" [ownerName]="driver.fullName" />
-                  <button
-                    type="button"
-                    class="dp-btn dp-btn--sm"
-                    [class.dp-btn--danger]="driver.isActive"
-                    [class.dp-btn--success]="!driver.isActive"
-                    [disabled]="pending.has(driver.id)"
-                    [attr.aria-busy]="pending.has(driver.id)"
-                    (click)="onToggleActive(driver)"
-                  >
-                    @if (pending.has(driver.id)) {
-                      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                      {{ driver.isActive ? 'جارٍ الإيقاف' : 'جارٍ التفعيل' }}
-                    } @else if (driver.isActive) {
-                      <i class="fa-solid fa-user-lock"></i>
-                      إيقاف
-                    } @else {
-                      <i class="fa-solid fa-user-check"></i>
-                      تفعيل
+                  <div class="acct-actions">
+                    <a class="acct-icon-btn" [routerLink]="['/drivers', driver.id]" title="عرض التفاصيل والمستندات" aria-label="عرض التفاصيل">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                    @if (!driver.isDeleted) {
+                      <a class="acct-icon-btn" [routerLink]="['/drivers', driver.id, 'edit']" title="تعديل" aria-label="تعديل">
+                        <i class="fa-solid fa-pen"></i>
+                      </a>
+                      <app-owner-orders-link ownerType="Driver" [ownerId]="driver.id" [ownerName]="driver.fullName" />
+                      @if (isAdmin()) {
+                        <button
+                          type="button"
+                          class="dp-btn dp-btn--sm"
+                          [class.dp-btn--danger]="driver.isActive"
+                          [class.dp-btn--success]="!driver.isActive"
+                          [disabled]="pending.has(driver.id)"
+                          [attr.aria-busy]="pending.has(driver.id)"
+                          (click)="onToggleActive(driver)"
+                        >
+                          @if (pending.has(driver.id)) {
+                            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                          } @else if (driver.isActive) {
+                            <i class="fa-solid fa-user-lock"></i>
+                            إيقاف
+                          } @else {
+                            <i class="fa-solid fa-user-check"></i>
+                            موافقة / تفعيل
+                          }
+                        </button>
+                        <button
+                          type="button"
+                          class="acct-icon-btn acct-icon-btn--danger"
+                          title="حذف"
+                          aria-label="حذف"
+                          [disabled]="pending.has(driver.id)"
+                          (click)="onDelete(driver)"
+                        >
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      }
                     }
-                  </button>
+                  </div>
                 </td>
               </tr>
             }
@@ -171,6 +194,7 @@
   <app-pagination
     [pageIndex]="list.pageIndex()"
     [pageSize]="list.pageSize()"
+    [pageSizeOptions]="pageSizeOptions"
     [count]="list.count()"
     [totalPages]="list.totalPages()"
     [disabled]="list.isLoading()"

@@ -1,0 +1,114 @@
+@if (record.value(); as customer) {
+  <div class="ap">
+    <app-account-page-header
+      backLink="/customers"
+      backLabel="العملاء"
+      [title]="customer.name || 'بدون اسم'"
+      [subtitle]="'#' + customer.id"
+      icon="fa-user"
+      [badges]="badges(customer)"
+      [muted]="customer.isDeleted"
+    >
+      <a class="ap-btn" [routerLink]="ordersLink('Customer', customer.id)" [queryParams]="{ name: customer.name }">
+        <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+        طلبات العميل
+      </a>
+      @if (!customer.isDeleted) {
+        <a class="ap-btn ap-btn--brand" [routerLink]="['/customers', customer.id, 'edit']">
+          <i class="fa-solid fa-pen" aria-hidden="true"></i>
+          تعديل
+        </a>
+        @if (isAdmin()) {
+          <button
+            type="button"
+            class="ap-btn"
+            [class.ap-btn--danger]="!customer.isBanned"
+            [class.ap-btn--success]="customer.isBanned"
+            [disabled]="isBusy()"
+            (click)="onToggleBan(customer)"
+          >
+            <i class="fa-solid" [class.fa-ban]="!customer.isBanned" [class.fa-lock-open]="customer.isBanned" aria-hidden="true"></i>
+            {{ customer.isBanned ? 'إلغاء الحظر' : 'حظر' }}
+          </button>
+          <button type="button" class="ap-btn ap-btn--danger" [disabled]="isBusy()" (click)="onDelete(customer)">
+            @if (isBusy()) {
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            } @else {
+              <i class="fa-solid fa-trash" aria-hidden="true"></i>
+            }
+            حذف
+          </button>
+        }
+      }
+    </app-account-page-header>
+
+    @if (customer.isDeleted) {
+      <div class="ap-alert ap-alert--muted" role="status">
+        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+        <span>
+          هذا الحساب محذوف{{ customer.deletedAt ? ' منذ ' + formatDate(customer.deletedAt) : '' }} ومتاح للعرض فقط.
+        </span>
+      </div>
+    }
+
+    <section class="ap-card" aria-labelledby="cd-info">
+      <div class="ap-card__head">
+        <i class="fa-solid fa-id-card" aria-hidden="true"></i>
+        <h2 class="ap-card__title" id="cd-info">بيانات الحساب</h2>
+      </div>
+      <dl class="ap-fields">
+        <div class="ap-field">
+          <dt>رقم الدخول</dt>
+          <dd><app-phone-actions [phone]="customer.phoneNumber" [verified]="customer.phoneNumberConfirmed" /></dd>
+        </div>
+        <div class="ap-field">
+          <dt>المدينة</dt>
+          <dd [class.ap-muted]="!customer.cityName">{{ customer.cityName || 'غير محددة' }}</dd>
+        </div>
+        <div class="ap-field">
+          <dt>الموقع على الخريطة</dt>
+          <dd>
+            @if (location(); as point) {
+              <a class="ap-link" [href]="mapsUrl(point)" target="_blank" rel="noopener noreferrer">
+                <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+                فتح في الخريطة
+              </a>
+            } @else {
+              <span class="ap-muted">غير محدد</span>
+            }
+          </dd>
+        </div>
+        <div class="ap-field">
+          <dt>تاريخ الإنشاء</dt>
+          <dd [title]="formatDateTime(customer.createdAt)">{{ formatDate(customer.createdAt) }}</dd>
+        </div>
+        <div class="ap-field ap-field--wide">
+          <dt>العنوان</dt>
+          <dd [class.ap-muted]="!customer.address">{{ customer.address || 'غير محدد' }}</dd>
+        </div>
+      </dl>
+    </section>
+  </div>
+} @else if (recordId() === null || record.status() === 'not-found') {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-user-large-slash" aria-hidden="true"></i>
+    <strong>العميل غير موجود</strong>
+    <p>ربما تم حذفه أو أن الرابط غير صحيح.</p>
+    <a class="ap-btn" routerLink="/customers">العودة إلى العملاء</a>
+  </div>
+} @else if (record.status() === 'error') {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+    <strong>تعذّر تحميل بيانات العميل</strong>
+    <p>{{ record.error()?.message }}</p>
+    <button type="button" class="ap-btn ap-btn--brand" (click)="record.reload()">
+      <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+      إعادة المحاولة
+    </button>
+  </div>
+} @else {
+  <div class="ap" aria-busy="true" aria-label="جارٍ تحميل بيانات العميل">
+    <div class="ap-skeleton" style="height: 110px"></div>
+    <div class="ap-skeleton" style="height: 200px"></div>
+  </div>
+}

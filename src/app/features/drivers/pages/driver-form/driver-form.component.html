@@ -1,0 +1,268 @@
+@if (mode() === 'edit' && (recordId() === null || record.status() === 'not-found')) {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-user-slash" aria-hidden="true"></i>
+    <strong>السائق غير موجود</strong>
+    <p>ربما تم حذفه أو أن الرابط غير صحيح.</p>
+    <a class="ap-btn" routerLink="/drivers">العودة إلى السائقين</a>
+  </div>
+} @else if (mode() === 'edit' && record.status() === 'error') {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+    <strong>تعذّر تحميل بيانات السائق</strong>
+    <p>{{ record.error()?.message }}</p>
+    <button type="button" class="ap-btn ap-btn--brand" (click)="record.reload()">إعادة المحاولة</button>
+  </div>
+} @else if (mode() === 'edit' && !record.value()) {
+  <div class="ap" aria-busy="true" aria-label="جارٍ تحميل بيانات السائق">
+    <div class="ap-skeleton" style="height: 110px"></div>
+    <div class="ap-skeleton" style="height: 520px"></div>
+  </div>
+} @else if (record.value()?.isDeleted) {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-lock" aria-hidden="true"></i>
+    <strong>لا يمكن تعديل حساب محذوف</strong>
+    <p>الحسابات المحذوفة متاحة للعرض فقط.</p>
+    <a class="ap-btn" [routerLink]="['/drivers', record.value()!.id]">عرض السائق</a>
+  </div>
+} @else {
+  <form class="ap" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    <app-account-page-header
+      backLink="/drivers"
+      backLabel="السائقون"
+      [crumb]="mode() === 'create' ? 'إضافة سائق' : 'تعديل'"
+      [title]="mode() === 'create' ? 'إضافة سائق جديد' : 'تعديل ' + (record.value()?.fullName ?? '')"
+      [subtitle]="mode() === 'create' ? 'سيتم تفعيل رقم الدخول مباشرة دون الحاجة لرمز تحقق' : '#' + recordId()"
+      [imageUrl]="currentImage('profileImage')"
+      icon="fa-motorcycle"
+    />
+
+    <fieldset class="df-sections" [disabled]="isSubmitting()">
+      <!-- ── Personal ── -->
+      <section class="ap-card" aria-labelledby="df-personal">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-user" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="df-personal">البيانات الشخصية والدخول</h2>
+        </div>
+        <div class="df-split">
+          <div class="ap-form-grid">
+            <div class="ap-input">
+              <label class="form-label" for="df-name">الاسم الكامل <span class="ap-required">*</span></label>
+              <input id="df-name" class="form-control" formControlName="fullName" autocomplete="off" />
+              <app-form-error [control]="form.controls.fullName" label="الاسم الكامل" />
+            </div>
+
+            <div class="ap-input">
+              <label class="form-label" for="df-phone">رقم الدخول (موبايل) <span class="ap-required">*</span></label>
+              <input
+                id="df-phone"
+                class="form-control"
+                type="tel"
+                inputmode="tel"
+                dir="ltr"
+                placeholder="0912345678"
+                formControlName="phoneNumber"
+                autocomplete="off"
+                (blur)="normalizePhone()"
+              />
+              <app-form-error [control]="form.controls.phoneNumber" label="رقم الدخول" />
+              @if (mode() === 'edit') {
+                <div class="ap-hint"><i class="fa-solid fa-circle-info" aria-hidden="true"></i>{{ phoneHint }}</div>
+              }
+            </div>
+
+            <div class="ap-input">
+              <label class="form-label" for="df-password">
+                كلمة المرور
+                @if (mode() === 'create') {
+                  <span class="ap-required">*</span>
+                } @else {
+                  <span class="ap-optional">(اختياري)</span>
+                }
+              </label>
+              <app-password-input id="df-password" formControlName="password" autocomplete="new-password" />
+              <app-form-error [control]="form.controls.password" label="كلمة المرور" />
+              @if (mode() === 'edit') {
+                <div class="ap-hint"><i class="fa-solid fa-circle-info" aria-hidden="true"></i>{{ passwordHint }}</div>
+              }
+            </div>
+
+            <div class="ap-input">
+              <label class="form-label" for="df-national-id">الرقم الوطني <span class="ap-required">*</span></label>
+              <input id="df-national-id" class="form-control" dir="ltr" inputmode="numeric" formControlName="nationalId" autocomplete="off" />
+              <app-form-error [control]="form.controls.nationalId" label="الرقم الوطني" />
+            </div>
+
+            <div class="ap-input">
+              <label class="form-label" for="df-dob">تاريخ الميلاد</label>
+              <input id="df-dob" class="form-control" type="date" [max]="today" formControlName="dateOfBirth" />
+            </div>
+
+            <div class="ap-input">
+              <label class="form-label">المدينة <span class="ap-required">*</span></label>
+              <app-searchable-select
+                formControlName="cityId"
+                [options]="cities.options()"
+                [isDisabled]="cities.isLoading() || isSubmitting()"
+                [placeholder]="cities.isLoading() ? 'جارٍ تحميل المدن...' : 'اختر المدينة'"
+                searchPlaceholder="بحث عن مدينة..."
+              />
+              <app-form-error [control]="form.controls.cityId" label="المدينة" />
+              @if (cities.hasFailed()) {
+                <div class="ap-hint">
+                  تعذّر تحميل المدن.
+                  <button type="button" class="btn btn-link btn-sm p-0" (click)="cities.ensureLoaded()">إعادة المحاولة</button>
+                </div>
+              }
+            </div>
+
+            <div class="ap-input ap-input--wide">
+              <label class="form-label" for="df-address">العنوان <span class="ap-required">*</span></label>
+              <input id="df-address" class="form-control" formControlName="address" autocomplete="off" />
+              <app-form-error [control]="form.controls.address" label="العنوان" />
+            </div>
+          </div>
+
+          <app-image-picker
+            [label]="imageLabels.profileImage + ' (اختياري)'"
+            [currentUrl]="currentImage('profileImage')"
+            [disabled]="isSubmitting()"
+            (fileChange)="onImagePicked('profileImage', $event)"
+          />
+        </div>
+      </section>
+
+      <!-- ── National ID ── -->
+      <section class="ap-card" aria-labelledby="df-id">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-id-card" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="df-id">البطاقة الشخصية</h2>
+        </div>
+        <div class="df-docs">
+          <app-image-picker
+            [label]="imageLabels.nationalIdFrontImage"
+            [currentUrl]="currentImage('nationalIdFrontImage')"
+            [disabled]="isSubmitting()"
+            (fileChange)="onImagePicked('nationalIdFrontImage', $event)"
+          />
+          <app-image-picker
+            [label]="imageLabels.nationalIdBackImage"
+            [currentUrl]="currentImage('nationalIdBackImage')"
+            [disabled]="isSubmitting()"
+            (fileChange)="onImagePicked('nationalIdBackImage', $event)"
+          />
+        </div>
+      </section>
+
+      <!-- ── License ── -->
+      <section class="ap-card" aria-labelledby="df-license">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-address-card" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="df-license">رخصة القيادة</h2>
+        </div>
+        <div class="ap-form-grid">
+          <div class="ap-input">
+            <label class="form-label" for="df-license-issue">تاريخ الإصدار</label>
+            <input id="df-license-issue" class="form-control" type="date" [max]="today" formControlName="licenseIssueDate" />
+          </div>
+          <div class="ap-input">
+            <label class="form-label" for="df-license-expiry">تاريخ الانتهاء</label>
+            <input id="df-license-expiry" class="form-control" type="date" formControlName="licenseExpiryDate" />
+            <app-form-error [control]="form.controls.licenseExpiryDate" label="تاريخ الانتهاء" />
+          </div>
+        </div>
+        <div class="df-docs">
+          <app-image-picker
+            [label]="imageLabels.licenseFrontImage"
+            [currentUrl]="currentImage('licenseFrontImage')"
+            [disabled]="isSubmitting()"
+            (fileChange)="onImagePicked('licenseFrontImage', $event)"
+          />
+          <app-image-picker
+            [label]="imageLabels.licenseBackImage"
+            [currentUrl]="currentImage('licenseBackImage')"
+            [disabled]="isSubmitting()"
+            (fileChange)="onImagePicked('licenseBackImage', $event)"
+          />
+        </div>
+      </section>
+
+      <!-- ── Vehicle ── -->
+      <section class="ap-card" aria-labelledby="df-vehicle">
+        <div class="ap-card__head">
+          <i class="fa-solid fa-car-side" aria-hidden="true"></i>
+          <h2 class="ap-card__title" id="df-vehicle">المركبة</h2>
+        </div>
+        <div class="df-split">
+          <div class="ap-form-grid">
+            <div class="ap-input">
+              <label class="form-label" for="df-vehicle-type">النوع <span class="ap-required">*</span></label>
+              <select id="df-vehicle-type" class="form-select" formControlName="vehicleType">
+                @for (type of vehicleTypes; track type) {
+                  <option [value]="type">{{ vehicleMeta[type].label }}</option>
+                }
+              </select>
+            </div>
+            <div class="ap-input">
+              <label class="form-label" for="df-make">الماركة <span class="ap-required">*</span></label>
+              <input id="df-make" class="form-control" placeholder="تويوتا" formControlName="vehicleMake" autocomplete="off" />
+              <app-form-error [control]="form.controls.vehicleMake" label="الماركة" />
+            </div>
+            <div class="ap-input">
+              <label class="form-label" for="df-model">الموديل <span class="ap-required">*</span></label>
+              <input id="df-model" class="form-control" placeholder="كورولا" formControlName="vehicleModel" autocomplete="off" />
+              <app-form-error [control]="form.controls.vehicleModel" label="الموديل" />
+            </div>
+            <div class="ap-input">
+              <label class="form-label" for="df-year">سنة الصنع</label>
+              <input id="df-year" class="form-control" dir="ltr" inputmode="numeric" placeholder="2019" formControlName="vehicleYear" />
+              <app-form-error [control]="form.controls.vehicleYear" label="سنة الصنع" />
+            </div>
+            <div class="ap-input">
+              <label class="form-label" for="df-color">اللون</label>
+              <input id="df-color" class="form-control" formControlName="vehicleColor" autocomplete="off" />
+              <app-form-error [control]="form.controls.vehicleColor" label="اللون" />
+            </div>
+            <div class="ap-input">
+              <label class="form-label" for="df-plate">رقم اللوحة <span class="ap-required">*</span></label>
+              <input id="df-plate" class="form-control" dir="ltr" formControlName="plateNumber" autocomplete="off" />
+              <app-form-error [control]="form.controls.plateNumber" label="رقم اللوحة" />
+            </div>
+          </div>
+
+          <app-image-picker
+            [label]="imageLabels.vehicleImage + ' (اختياري)'"
+            [currentUrl]="currentImage('vehicleImage')"
+            [disabled]="isSubmitting()"
+            (fileChange)="onImagePicked('vehicleImage', $event)"
+          />
+        </div>
+      </section>
+
+      @if (mode() === 'create') {
+        <section class="ap-card">
+          <label class="ap-check">
+            <input type="checkbox" class="form-check-input m-0" formControlName="isActive" />
+            تفعيل السائق مباشرة
+          </label>
+          <div class="ap-hint">
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+            عند إلغاء التحديد يُنشأ الحساب بانتظار الموافقة، ولن يستقبل طلبات حتى يتم تفعيله.
+          </div>
+        </section>
+      }
+    </fieldset>
+
+    <div class="ap-bar">
+      <a class="ap-btn" [routerLink]="mode() === 'create' ? ['/drivers'] : ['/drivers', recordId()]">إلغاء</a>
+      <button type="submit" class="ap-btn ap-btn--brand" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          جارٍ الحفظ…
+        } @else {
+          <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+          {{ mode() === 'create' ? 'إضافة السائق' : 'حفظ التعديلات' }}
+        }
+      </button>
+    </div>
+  </form>
+}

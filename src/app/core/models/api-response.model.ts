@@ -12,6 +12,13 @@ export interface ApiResponse<T = unknown> {
   timestamp?: string;
 }
 
+/** Unwrapped payload plus the envelope's user-facing message (see `ApiService.send`). */
+export interface ApiResult<T> {
+  data: T;
+  /** The server's Arabic copy (e.g. "تم إنشاء الحساب بنجاح"), `null` when absent. */
+  message: string | null;
+}
+
 /** Backend validation errors keyed by field name. */
 export type ApiFieldErrors = Record<string, string[] | string>;
 
@@ -63,3 +70,6 @@ export interface PagedQuery {
   pageSize?: number;
   search?: string;
 }
+
+/** Hard cap the backend applies to `pageSize` on its paged endpoints. */
+export const MAX_PAGE_SIZE = 50;

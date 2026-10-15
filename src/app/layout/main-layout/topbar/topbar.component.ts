@@ -4,12 +4,13 @@ import { AuthService } from '../../../core/auth/services/auth.service';
 import { LayoutService } from '../../../core/services/layout.service';
 import { DialogService } from '../../../core/services/dialog.service';
 import { environment } from '../../../../environments/environment';
+import { GlobalSearchTriggerComponent } from '../../../features/search/components/global-search-trigger/global-search-trigger.component';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, GlobalSearchTriggerComponent],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss',
 })

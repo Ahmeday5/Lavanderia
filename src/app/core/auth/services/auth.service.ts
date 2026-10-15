@@ -27,7 +27,7 @@ import {
   UserRole,
 } from '../models/auth.model';
 import { ApiError } from '../../models/api-response.model';
-import { AUTH_ENDPOINTS, LOGIN_ROUTE } from '../auth.config';
+import { AUTH_ENDPOINTS, LOGIN_ROUTE, STAFF_ROLES } from '../auth.config';
 import {
   withInlineHandling,
   withSkipAuth,
@@ -104,6 +104,8 @@ export class AuthService {
   private readonly currentUserSignal = signal<User | null>(this.loadStoredUser());
   readonly currentUser = this.currentUserSignal.asReadonly();
   readonly isAuthenticated = computed(() => !!this.currentUserSignal());
+  /** Gate for Admin-only actions (delete, ban, driver approval, …). */
+  readonly isAdmin = computed(() => this.currentUserSignal()?.role === STAFF_ROLES.admin);
 
   /**
    * Set of permissions the current user holds. Kept as a derived signal so

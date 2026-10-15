@@ -1,35 +1,54 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DialogService } from '../../../../core/services/dialog.service';
-import { ToastService } from '../../../../core/services/toast.service';
-import { ApiError } from '../../../../core/models/api-response.model';
-import { apiErrorToMessage } from '../../../../core/utils/api-error.util';
-import { createPagedList } from '../../../../core/utils/paged-list.util';
+import { RouterLink } from '@angular/router';
+import { AuthService } from '../../../../core/auth/services/auth.service';
 import { pendingSet } from '../../../../core/utils/pending-set.util';
 import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
 import { PhoneActionsComponent } from '../../../../shared/components/phone-actions/phone-actions.component';
 import { RefreshButtonComponent } from '../../../../shared/components/refresh-button/refresh-button.component';
 import { formatDate, formatDateTime } from '../../../../shared/utils/date-format.util';
-import { CustomersService } from '../../services/customers.service';
-import { Customer } from '../../models/customer.model';
+import { AccountBadgesComponent } from '../../../accounts/components/account-badges/account-badges.component';
+import { DeletedToggleComponent } from '../../../accounts/components/deleted-toggle/deleted-toggle.component';
+import { ACCOUNT_PAGE_SIZE_OPTIONS } from '../../../accounts/models/account.model';
+import { createAccountList } from '../../../accounts/utils/account-list.util';
 import { OwnerOrdersLinkComponent } from '../../../orders/components/owner-orders-link/owner-orders-link.component';
+import { Customer, customerBadges } from '../../models/customer.model';
+import { CustomersService } from '../../services/customers.service';
+import { CustomerActionsService } from '../../services/customer-actions.service';
 
+/**
+ * Customers — `/customers?search=…`. Server search & pagination; the search
+ * lives in the URL. Deleted accounts are view-only; ban & delete are Admin-only.
+ */
 @Component({
   selector: 'app-customers-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, PaginationComponent, PhoneActionsComponent, RefreshButtonComponent, OwnerOrdersLinkComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    PaginationComponent,
+    PhoneActionsComponent,
+    RefreshButtonComponent,
+    OwnerOrdersLinkComponent,
+    AccountBadgesComponent,
+    DeletedToggleComponent,
+  ],
   templateUrl: './customers-list.component.html',
   styleUrl: './customers-list.component.scss',
 })
 export class CustomersListComponent {
   private readonly customersService = inject(CustomersService);
-  private readonly dialog = inject(DialogService);
-  private readonly toast = inject(ToastService);
+  private readonly actions = inject(CustomerActionsService);
 
-  protected readonly list = createPagedList((query) => this.customersService.list(query));
+  protected readonly isAdmin = inject(AuthService).isAdmin;
+  protected readonly accounts = createAccountList((query) => this.customersService.list(query));
+  protected readonly list = this.accounts.list;
+  protected readonly includeDeleted = this.accounts.includeDeleted;
   protected readonly pending = pendingSet<number>();
 
+  protected readonly pageSizeOptions = ACCOUNT_PAGE_SIZE_OPTIONS;
+  protected readonly badges = customerBadges;
   protected readonly formatDate = formatDate;
   protected readonly formatDateTime = formatDateTime;
 
@@ -39,36 +58,21 @@ export class CustomersListComponent {
 
   protected async onToggleBan(customer: Customer): Promise<void> {
     if (this.pending.has(customer.id)) return;
-    const willBan = !customer.isBanned;
-    const name = customer.name || 'هذا العميل';
+    const changed = await this.actions.toggleBan(customer, (busy) => this.setBusy(customer.id, busy));
+    if (!changed) return;
+    this.list.updateItems((items) =>
+      items.map((c) => (c.id === customer.id ? { ...c, isBanned: !customer.isBanned } : c)),
+    );
+  }
 
-    const confirmed = await this.dialog.confirm({
-      title: willBan ? 'حظر العميل' : 'إلغاء حظر العميل',
-      message: willBan
-        ? `هل أنت متأكد من حظر "${name}"؟ لن يتمكن من إنشاء طلبات جديدة حتى يتم إلغاء الحظر.`
-        : `هل تريد إلغاء حظر "${name}"؟ سيتمكن من استخدام التطبيق فورًا.`,
-      confirmText: willBan ? 'حظر' : 'إلغاء الحظر',
-      type: willBan ? 'danger' : 'info',
-    });
-    if (!confirmed) return;
+  protected async onDelete(customer: Customer): Promise<void> {
+    if (this.pending.has(customer.id)) return;
+    const deleted = await this.actions.delete(customer, (busy) => this.setBusy(customer.id, busy));
+    if (deleted) this.list.reload();
+  }
 
-    this.pending.add(customer.id);
-    const request$ = willBan
-      ? this.customersService.ban(customer.id)
-      : this.customersService.unban(customer.id);
-
-    request$.subscribe({
-      next: () => {
-        this.pending.delete(customer.id);
-        this.list.updateItems((items) =>
-          items.map((c) => (c.id === customer.id ? { ...c, isBanned: willBan } : c)),
-        );
-        this.toast.success(willBan ? 'تم حظر العميل بنجاح' : 'تم تفعيل العميل بنجاح');
-      },
-      error: (err: ApiError) => {
-        this.pending.delete(customer.id);
-        this.toast.error(apiErrorToMessage(err, willBan ? 'تعذّر حظر العميل' : 'تعذّر إلغاء الحظر'));
-      },
-    });
+  private setBusy(id: number, busy: boolean): void {
+    if (busy) this.pending.add(id);
+    else this.pending.delete(id);
   }
 }

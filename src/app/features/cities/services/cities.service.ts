@@ -1,10 +1,11 @@
 import { Injectable, inject } from '@angular/core';
-import { map } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { ApiService } from '../../../core/services/api.service';
 import { PagedQuery } from '../../../core/models/api-response.model';
 import { toPaged, toPagedParams } from '../../../core/utils/api-list.util';
 import { withCacheInvalidate, withInlineHandling } from '../../../core/http/http-context.tokens';
 import { City, CreateCityRequest, UpdateCityRequest, toCity } from '../models/city.model';
+import { CityLookupService } from './city-lookup.service';
 
 const ENDPOINT = 'dashboard/cities';
 
@@ -15,6 +16,8 @@ const ENDPOINT = 'dashboard/cities';
 @Injectable({ providedIn: 'root' })
 export class CitiesService {
   private readonly api = inject(ApiService);
+  /** Account forms pick cities from the lookup — refresh it after any change here. */
+  private readonly lookup = inject(CityLookupService);
 
   list(query: PagedQuery = {}) {
     const params = toPagedParams({ pageIndex: query.pageIndex, pageSize: query.pageSize });
@@ -32,7 +35,10 @@ export class CitiesService {
       .post<unknown>(ENDPOINT, payload, {
         context: withInlineHandling(withCacheInvalidate([ENDPOINT])),
       })
-      .pipe(map(toCity));
+      .pipe(
+        map(toCity),
+        tap(() => this.lookup.invalidate()),
+      );
   }
 
   update(id: number, payload: UpdateCityRequest) {
@@ -40,12 +46,17 @@ export class CitiesService {
       .put<unknown>(`${ENDPOINT}/${id}`, payload, {
         context: withInlineHandling(withCacheInvalidate([ENDPOINT])),
       })
-      .pipe(map(toCity));
+      .pipe(
+        map(toCity),
+        tap(() => this.lookup.invalidate()),
+      );
   }
 
   delete(id: number) {
-    return this.api.delete<null>(`${ENDPOINT}/${id}`, {
-      context: withInlineHandling(withCacheInvalidate([ENDPOINT])),
-    });
+    return this.api
+      .delete<null>(`${ENDPOINT}/${id}`, {
+        context: withInlineHandling(withCacheInvalidate([ENDPOINT])),
+      })
+      .pipe(tap(() => this.lookup.invalidate()));
   }
 }

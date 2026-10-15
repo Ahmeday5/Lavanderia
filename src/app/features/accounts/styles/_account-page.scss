@@ -1,0 +1,373 @@
+// Building blocks shared by the account details & form pages (laundries,
+// customers, drivers): cards, field grids, buttons, alerts, states, save bar.
+// `@use` it at the top of the page stylesheet — rules are emitted into, and
+// encapsulated by, each page. Keep it lean: it counts toward every page's
+// component-style budget.
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.ap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: ap-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Card ── */
+.ap-card {
+  border-radius: 18px;
+  background: var(--bg2);
+  border: 1px solid var(--brd);
+  box-shadow: 0 1px 2px rgba(10, 42, 74, 0.04);
+  padding: 20px 22px;
+}
+
+.ap-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  > i {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: var(--bl-l);
+    color: var(--bl);
+    font-size: 13px;
+  }
+}
+
+.ap-card__title {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--txt);
+}
+
+.ap-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+/* ── Read-only fields ── */
+.ap-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  gap: 14px 20px;
+  margin: 0;
+}
+
+.ap-field {
+  min-width: 0;
+
+  &--wide {
+    grid-column: 1 / -1;
+  }
+
+  dt {
+    margin-bottom: 3px;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--txt3);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--txt);
+    overflow-wrap: anywhere;
+  }
+}
+
+.ap-muted {
+  color: var(--txt3) !important;
+  font-weight: 400 !important;
+}
+
+.ap-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.ap-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.ap-money {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+}
+
+/* ── Form ── */
+.ap-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 4px 18px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.ap-input {
+  margin-bottom: 12px;
+  min-width: 0;
+
+  &--wide {
+    grid-column: 1 / -1;
+  }
+
+  .form-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--txt2);
+    margin-bottom: 5px;
+  }
+}
+
+.ap-required {
+  color: var(--re);
+}
+
+.ap-optional {
+  font-weight: 400;
+  color: var(--txt3);
+}
+
+.ap-hint {
+  display: flex;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--txt3);
+
+  i {
+    margin-top: 3px;
+    font-size: 9.5px;
+  }
+}
+
+.ap-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--txt);
+  cursor: pointer;
+}
+
+/* ── Buttons ── */
+.ap-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 15px;
+  border: 1px solid var(--brd2);
+  border-radius: 10px;
+  background: var(--bg2);
+  color: var(--txt2);
+  font: 600 11.5px var(--font-base);
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  i {
+    font-size: 10.5px;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--bg3);
+    color: var(--txt);
+  }
+
+  &--brand {
+    border-color: transparent;
+    background: var(--brand-gradient);
+    color: var(--brand-white);
+
+    &:hover:not(:disabled) {
+      background: var(--brand-gradient);
+      color: var(--brand-white);
+      filter: brightness(1.08);
+    }
+  }
+
+  &--danger {
+    border-color: var(--re);
+    color: var(--re);
+
+    &:hover:not(:disabled) {
+      background: var(--re);
+      color: #fff;
+    }
+  }
+
+  &--success {
+    border-color: var(--gr);
+    color: var(--gr);
+
+    &:hover:not(:disabled) {
+      background: var(--gr);
+      color: #fff;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bl);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+/* ── Alerts ── */
+.ap-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  line-height: 1.7;
+  background: var(--am-l);
+  color: var(--am);
+
+  i {
+    margin-top: 4px;
+  }
+
+  &--danger {
+    background: var(--re-l);
+    color: var(--re);
+  }
+
+  &--muted {
+    background: var(--bg3);
+    color: var(--txt2);
+  }
+}
+
+/* ── Load states ── */
+.ap-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 64px 24px;
+  border-radius: 18px;
+  border: 1.5px dashed var(--brd2);
+  background: var(--bg2);
+  text-align: center;
+
+  > i {
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 8px;
+    border-radius: 50%;
+    background: var(--bl-l);
+    color: var(--bl);
+    font-size: 22px;
+  }
+
+  strong {
+    font-size: 13.5px;
+    color: var(--txt);
+  }
+
+  p {
+    margin: 0 0 12px;
+    font-size: 11.5px;
+    color: var(--txt2);
+  }
+}
+
+.ap-skeleton {
+  border-radius: 18px;
+  background: linear-gradient(100deg, var(--bg3) 30%, var(--brd) 50%, var(--bg3) 70%);
+  background-size: 200% 100%;
+  animation: ap-shimmer 1.4s ease-in-out infinite;
+}
+
+/* ── Sticky save bar ── */
+.ap-bar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--bg2);
+  border: 1px solid var(--brd);
+  box-shadow: 0 16px 36px -18px rgba(10, 42, 74, 0.35);
+}
+
+@keyframes ap-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ap-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .ap-card {
+    padding: 16px;
+  }
+
+  .ap-bar .ap-btn {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ap,
+  .ap-skeleton {
+    animation: none !important;
+  }
+}

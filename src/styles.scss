@@ -470,6 +470,69 @@ app-root {
 
 body.app-modal-open { overflow: hidden; }
 
+/* ── ACCOUNT LISTS (laundries / customers / drivers) ──
+   Row actions + "add" button shared by the three account list pages. Each
+   page sets its identity color once: `.xp { --acct-accent: #…; }`. */
+.acct-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.acct-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--brd2);
+  border-radius: 8px;
+  background: var(--bg2);
+  color: var(--txt2);
+  font-size: 11px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.acct-icon-btn:hover:not(:disabled) {
+  border-color: var(--acct-accent, var(--brand));
+  color: var(--acct-accent, var(--brand));
+}
+.acct-icon-btn--danger:hover:not(:disabled) {
+  border-color: var(--re);
+  background: var(--re-l);
+  color: var(--re);
+}
+.acct-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.acct-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 12px;
+  background: var(--acct-accent, var(--brand));
+  color: #fff;
+  font: 700 12px var(--font-base);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+.acct-add-btn i { font-size: 11px; }
+.acct-add-btn:hover {
+  color: #fff;
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.acct-row--deleted { opacity: 0.55; }
+.acct-row--deleted .acct-avatar { filter: grayscale(1); }
+
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar {
   width: 5px;

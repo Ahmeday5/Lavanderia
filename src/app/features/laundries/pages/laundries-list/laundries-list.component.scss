@@ -6,6 +6,7 @@
 }
 
 .lp {
+  --acct-accent: #0d9488;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -325,15 +326,18 @@
   color: var(--txt);
 }
 
-.lp-phone {
-  color: var(--txt);
-  font-weight: 500;
+.lp-laundry__id {
+  font-size: 10.5px;
+  color: var(--txt3);
 }
 
-.lp-verified {
-  margin-inline-start: 6px;
-  color: #0d9488;
-  font-size: 11px;
+a.lp-laundry {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover .lp-laundry__name {
+    color: #0d9488;
+  }
 }
 
 .lp-date {
@@ -341,32 +345,7 @@
   font-size: 11px;
 }
 
-/* ── Status chip ── */
-.lp-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 11px;
-  border-radius: 999px;
-  font-size: 10.5px;
-  font-weight: 600;
-
-  i {
-    font-size: 9px;
-  }
-
-  &--active {
-    background: rgba(13, 148, 136, 0.12);
-    color: #0d9488;
-  }
-
-  &--banned {
-    background: var(--re-l);
-    color: var(--re);
-  }
-}
-
-/* ── Ban / unban action ── */
+/* Row actions & add button: global `.acct-*` (styles.scss), tinted via `--acct-accent`. */
 .lp-actions {
   text-align: end;
 }

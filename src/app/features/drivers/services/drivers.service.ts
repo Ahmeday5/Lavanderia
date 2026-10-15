@@ -1,36 +1,101 @@
 import { Injectable, inject } from '@angular/core';
+import { map } from 'rxjs/operators';
 import { ApiService } from '../../../core/services/api.service';
-import { PagedQuery } from '../../../core/models/api-response.model';
-import { toPaged, toPagedParams } from '../../../core/utils/api-list.util';
-import { toLatinDigits } from '../../../core/utils/local-search.util';
-import { withInlineHandling } from '../../../core/http/http-context.tokens';
-import { toDriver } from '../models/driver.model';
+import { ApiResult } from '../../../core/models/api-response.model';
+import { UPLOAD_TIMEOUT_MS, toPaged } from '../../../core/utils/api-list.util';
+import { MultipartValue, toMultipartBody } from '../../../core/utils/form-data.util';
+import {
+  withCacheInvalidate,
+  withInlineHandling,
+  withTimeout,
+} from '../../../core/http/http-context.tokens';
+import { AccountListQuery, toAccountListParams } from '../../accounts/models/account.model';
+import {
+  DriverDetails,
+  SaveDriverRequest,
+  toDriver,
+  toDriverDetails,
+} from '../models/driver.model';
 
 const ENDPOINT = 'dashboard/drivers';
+/** A driver's name shows on order trips — keep cached order pages honest. */
+const RELATED = ['dashboard/orders'];
 
 /**
- * Delivery drivers — server-paginated with server-side search (name or phone).
- * Cached with a short TTL (availability changes from the driver app, see
- * `cache-policy.ts`); activate/deactivate evict it automatically.
+ * Delivery drivers — full CRUD plus activate/deactivate (approval). Cached
+ * with a short TTL (availability changes from the driver app, see
+ * `cache-policy.ts`); every mutation evicts `dashboard/drivers`.
  */
 @Injectable({ providedIn: 'root' })
 export class DriversService {
   private readonly api = inject(ApiService);
 
-  list(query: PagedQuery = {}) {
-    const params = toPagedParams({
-      ...query,
-      // Phones are stored with Latin digits; users often type Arabic-Indic ones.
-      search: query.search ? toLatinDigits(query.search) : undefined,
-    });
-    return this.api.get<unknown>(ENDPOINT, { params }).pipe(toPaged(toDriver));
+  list(query: AccountListQuery = {}) {
+    return this.api
+      .get<unknown>(ENDPOINT, { params: toAccountListParams(query) })
+      .pipe(toPaged(toDriver));
+  }
+
+  getById(id: number) {
+    return this.api.get<unknown>(`${ENDPOINT}/${id}`).pipe(map(toDriverDetails));
+  }
+
+  /** Admin-only. */
+  create(request: SaveDriverRequest) {
+    return this.api
+      .send<unknown>('POST', ENDPOINT, toDriverBody(request, true), {
+        context: withTimeout(UPLOAD_TIMEOUT_MS, withInlineHandling()),
+      })
+      .pipe(map(toDetailsResult));
+  }
+
+  update(id: number, request: SaveDriverRequest) {
+    return this.api
+      .send<unknown>('PUT', `${ENDPOINT}/${id}`, toDriverBody(request, false), {
+        context: withTimeout(UPLOAD_TIMEOUT_MS, withInlineHandling(withCacheInvalidate(RELATED))),
+      })
+      .pipe(map(toDetailsResult));
   }
 
   activate(id: number) {
-    return this.api.post<null>(`${ENDPOINT}/${id}/activate`, {}, { context: withInlineHandling() });
+    return this.api.send<null>('POST', `${ENDPOINT}/${id}/activate`, null, { context: withInlineHandling() });
   }
 
   deactivate(id: number) {
-    return this.api.post<null>(`${ENDPOINT}/${id}/deactivate`, {}, { context: withInlineHandling() });
+    return this.api.send<null>('POST', `${ENDPOINT}/${id}/deactivate`, null, { context: withInlineHandling() });
   }
+
+  /** Soft delete. Refused (400) while the driver has unfinished trips or a wallet balance. */
+  delete(id: number) {
+    return this.api.send<null>('DELETE', `${ENDPOINT}/${id}`, null, {
+      context: withInlineHandling(withCacheInvalidate(RELATED)),
+    });
+  }
+}
+
+function toDriverBody(request: SaveDriverRequest, isCreate: boolean): FormData {
+  const fields: Record<string, MultipartValue> = {
+    fullName: request.fullName,
+    phoneNumber: request.phoneNumber,
+    password: request.password,
+    nationalId: request.nationalId,
+    dateOfBirth: request.dateOfBirth,
+    cityId: request.cityId,
+    address: request.address,
+    licenseIssueDate: request.licenseIssueDate,
+    licenseExpiryDate: request.licenseExpiryDate,
+    vehicleType: request.vehicleType,
+    vehicleMake: request.vehicleMake,
+    vehicleModel: request.vehicleModel,
+    vehicleYear: request.vehicleYear,
+    vehicleColor: request.vehicleColor,
+    plateNumber: request.plateNumber,
+    ...request.images,
+  };
+  if (isCreate) fields['isActive'] = request.isActive ?? true;
+  return toMultipartBody(fields);
+}
+
+function toDetailsResult(result: ApiResult<unknown>): ApiResult<DriverDetails> {
+  return { message: result.message, data: toDriverDetails(result.data) };
 }

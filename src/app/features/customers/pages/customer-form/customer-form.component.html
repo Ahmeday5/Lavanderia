@@ -1,0 +1,137 @@
+@if (mode() === 'edit' && (recordId() === null || record.status() === 'not-found')) {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-user-large-slash" aria-hidden="true"></i>
+    <strong>العميل غير موجود</strong>
+    <p>ربما تم حذفه أو أن الرابط غير صحيح.</p>
+    <a class="ap-btn" routerLink="/customers">العودة إلى العملاء</a>
+  </div>
+} @else if (mode() === 'edit' && record.status() === 'error') {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+    <strong>تعذّر تحميل بيانات العميل</strong>
+    <p>{{ record.error()?.message }}</p>
+    <button type="button" class="ap-btn ap-btn--brand" (click)="record.reload()">إعادة المحاولة</button>
+  </div>
+} @else if (mode() === 'edit' && !record.value()) {
+  <div class="ap" aria-busy="true" aria-label="جارٍ تحميل بيانات العميل">
+    <div class="ap-skeleton" style="height: 110px"></div>
+    <div class="ap-skeleton" style="height: 320px"></div>
+  </div>
+} @else if (record.value()?.isDeleted) {
+  <div class="ap-state" role="alert">
+    <i class="fa-solid fa-lock" aria-hidden="true"></i>
+    <strong>لا يمكن تعديل حساب محذوف</strong>
+    <p>الحسابات المحذوفة متاحة للعرض فقط.</p>
+    <a class="ap-btn" [routerLink]="['/customers', record.value()!.id]">عرض العميل</a>
+  </div>
+} @else {
+  <form class="ap" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    <app-account-page-header
+      backLink="/customers"
+      backLabel="العملاء"
+      [crumb]="mode() === 'create' ? 'إضافة عميل' : 'تعديل'"
+      [title]="mode() === 'create' ? 'إضافة عميل جديد' : 'تعديل ' + (record.value()?.name ?? '')"
+      [subtitle]="mode() === 'create' ? 'سيتم تفعيل رقم الدخول مباشرة دون الحاجة لرمز تحقق' : '#' + recordId()"
+      icon="fa-user"
+    />
+
+    <section class="ap-card" aria-labelledby="cf-account">
+      <div class="ap-card__head">
+        <i class="fa-solid fa-id-card" aria-hidden="true"></i>
+        <h2 class="ap-card__title" id="cf-account">بيانات العميل</h2>
+      </div>
+
+      <fieldset class="ap-form-grid" [disabled]="isSubmitting()">
+        <div class="ap-input">
+          <label class="form-label" for="cf-name">الاسم <span class="ap-required">*</span></label>
+          <input id="cf-name" class="form-control" formControlName="name" autocomplete="off" />
+          <app-form-error [control]="form.controls.name" label="الاسم" />
+        </div>
+
+        <div class="ap-input">
+          <label class="form-label" for="cf-phone">رقم الدخول (موبايل) <span class="ap-required">*</span></label>
+          <input
+            id="cf-phone"
+            class="form-control"
+            type="tel"
+            inputmode="tel"
+            dir="ltr"
+            placeholder="0912345678"
+            formControlName="phoneNumber"
+            autocomplete="off"
+            (blur)="normalizePhone()"
+          />
+          <app-form-error [control]="form.controls.phoneNumber" label="رقم الدخول" />
+          @if (mode() === 'edit') {
+            <div class="ap-hint"><i class="fa-solid fa-circle-info" aria-hidden="true"></i>{{ phoneHint }}</div>
+          }
+        </div>
+
+        <div class="ap-input">
+          <label class="form-label" for="cf-password">
+            كلمة المرور
+            @if (mode() === 'create') {
+              <span class="ap-required">*</span>
+            } @else {
+              <span class="ap-optional">(اختياري)</span>
+            }
+          </label>
+          <app-password-input id="cf-password" formControlName="password" autocomplete="new-password" />
+          <app-form-error [control]="form.controls.password" label="كلمة المرور" />
+          @if (mode() === 'edit') {
+            <div class="ap-hint"><i class="fa-solid fa-circle-info" aria-hidden="true"></i>{{ passwordHint }}</div>
+          }
+        </div>
+
+        <div class="ap-input">
+          <label class="form-label">المدينة <span class="ap-required">*</span></label>
+          <app-searchable-select
+            formControlName="cityId"
+            [options]="cities.options()"
+            [isDisabled]="cities.isLoading() || isSubmitting()"
+            [placeholder]="cities.isLoading() ? 'جارٍ تحميل المدن...' : 'اختر المدينة'"
+            searchPlaceholder="بحث عن مدينة..."
+          />
+          <app-form-error [control]="form.controls.cityId" label="المدينة" />
+          @if (cities.hasFailed()) {
+            <div class="ap-hint">
+              تعذّر تحميل المدن.
+              <button type="button" class="btn btn-link btn-sm p-0" (click)="cities.ensureLoaded()">إعادة المحاولة</button>
+            </div>
+          }
+        </div>
+
+        <div class="ap-input ap-input--wide">
+          <label class="form-label" for="cf-address">العنوان <span class="ap-required">*</span></label>
+          <input id="cf-address" class="form-control" formControlName="address" autocomplete="off" />
+          <app-form-error [control]="form.controls.address" label="العنوان" />
+        </div>
+
+        <div class="ap-input">
+          <label class="form-label" for="cf-lat">خط العرض <span class="ap-optional">(اختياري)</span></label>
+          <input id="cf-lat" class="form-control" dir="ltr" inputmode="decimal" placeholder="32.8872" formControlName="latitude" />
+          <app-form-error [control]="form.controls.latitude" label="خط العرض" />
+        </div>
+
+        <div class="ap-input">
+          <label class="form-label" for="cf-lng">خط الطول <span class="ap-optional">(اختياري)</span></label>
+          <input id="cf-lng" class="form-control" dir="ltr" inputmode="decimal" placeholder="13.1913" formControlName="longitude" />
+          <app-form-error [control]="form.controls.longitude" label="خط الطول" />
+        </div>
+      </fieldset>
+    </section>
+
+    <div class="ap-bar">
+      <a class="ap-btn" [routerLink]="mode() === 'create' ? ['/customers'] : ['/customers', recordId()]">إلغاء</a>
+      <button type="submit" class="ap-btn ap-btn--brand" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          جارٍ الحفظ…
+        } @else {
+          <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+          {{ mode() === 'create' ? 'إضافة العميل' : 'حفظ التعديلات' }}
+        }
+      </button>
+    </div>
+  </form>
+}

@@ -1,0 +1,30 @@
+@use '../../../accounts/styles/account-page';
+
+.dd-gap {
+  margin-bottom: 14px;
+}
+
+.dd-docs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dd-expired {
+  color: var(--re) !important;
+}
+
+.dd-vehicle {
+  grid-column: 1 / -1;
+}
+
+.dd-vehicle__body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+
+  @media (max-width: 640px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
