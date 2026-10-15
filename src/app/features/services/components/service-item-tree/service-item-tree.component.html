@@ -1,0 +1,75 @@
+<ul class="sit" role="tree" aria-label="أصناف الخدمة">
+  @for (item of items(); track item.id) {
+    <li
+      class="sit-node"
+      [class.sit-node--open]="isExpanded(item)"
+      role="treeitem"
+      [attr.aria-expanded]="hasSubItems(item) ? isExpanded(item) : null"
+    >
+      <div class="sit-row" [class.sit-row--expandable]="hasSubItems(item)" (click)="onRowToggle(item)">
+        <button
+          type="button"
+          class="sit-toggle"
+          [disabled]="!hasSubItems(item)"
+          [attr.aria-label]="isExpanded(item) ? 'إخفاء الأنواع' : 'عرض الأنواع'"
+          (click)="$event.stopPropagation(); onRowToggle(item)"
+        >
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <app-thumb class="sit-thumb" [src]="item.imageUrl" [alt]="item.name" icon="fa-tag" [size]="30" />
+
+        <div class="sit-body">
+          <span class="sit-name">{{ item.name }}</span>
+          <span class="sit-count" [class.sit-count--empty]="!hasSubItems(item)">
+            {{ formatSubItemCount(item.subItems.length) }}
+          </span>
+        </div>
+
+        <div class="sit-actions" (click)="$event.stopPropagation()">
+          <button type="button" class="sit-add-btn" (click)="addSubItem.emit(item)" title="إضافة نوع">
+            <i class="fa-solid fa-plus"></i>
+            <span>إضافة نوع</span>
+          </button>
+          <button type="button" class="sit-btn" (click)="edit.emit(item)" title="تعديل الصنف" aria-label="تعديل الصنف">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button
+            type="button"
+            class="sit-btn sit-btn--danger"
+            (click)="remove.emit(item)"
+            title="حذف الصنف"
+            aria-label="حذف الصنف"
+          >
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      @if (isExpanded(item)) {
+        <ul class="sit-children" role="group">
+          @for (sub of item.subItems; track sub.id) {
+            <li class="sit-leaf" role="treeitem">
+              <app-thumb class="sit-thumb sit-thumb--sm" [src]="sub.imageUrl" [alt]="sub.name" icon="fa-tag" [size]="24" />
+              <span class="sit-name sit-name--leaf">{{ sub.name }}</span>
+              <div class="sit-actions">
+                <button type="button" class="sit-btn" (click)="edit.emit(sub)" title="تعديل النوع" aria-label="تعديل النوع">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button
+                  type="button"
+                  class="sit-btn sit-btn--danger"
+                  (click)="remove.emit(sub)"
+                  title="حذف النوع"
+                  aria-label="حذف النوع"
+                >
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </li>
+  }
+</ul>

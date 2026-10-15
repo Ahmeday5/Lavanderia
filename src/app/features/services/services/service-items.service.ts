@@ -29,12 +29,19 @@ const ITEMS_ENDPOINT = 'dashboard/service-items';
  * Service items are managed as a sub-resource of a service. Item mutations
  * invalidate `dashboard/services`, which also covers the cached
  * `dashboard/services/:id/items` pages.
+ *
+ * Sub-items (types) share every endpoint with root items; they differ only by
+ * a non-null `parentItemId` in the save body. Deleting a root item also
+ * deletes its sub-items server-side.
  */
 @Injectable({ providedIn: 'root' })
 export class ServiceItemsService {
   private readonly api = inject(ApiService);
 
-  /** Paged only — the endpoint has no server-side search. */
+  /**
+   * Root items of a service, each carrying its `subItems`. Paging and `count`
+   * apply to root items only. Paged only — no server-side search.
+   */
   listByService(serviceId: number, query: PagedQuery = {}) {
     return this.api
       .get<unknown>(`${SERVICES_ENDPOINT}/${serviceId}/items`, {
@@ -43,14 +50,14 @@ export class ServiceItemsService {
       .pipe(toPaged((raw) => toServiceItem(raw, serviceId)));
   }
 
-  /** Every item of a service across all pages. */
+  /** Every root item of a service (with its sub-items) across all pages. */
   listAllByService(serviceId: number) {
     return fetchAllPages<ServiceItem>((pageIndex, pageSize) =>
       this.listByService(serviceId, { pageIndex, pageSize }),
     );
   }
 
-  /** Total item count of a service, without downloading its rows. */
+  /** Root item count of a service, without downloading its rows. */
   countByService(serviceId: number) {
     return this.listByService(serviceId, { pageIndex: 1, pageSize: 1 }).pipe(
       map((page) => page.count),

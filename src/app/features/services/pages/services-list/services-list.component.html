@@ -155,26 +155,14 @@
                     لا توجد أصناف لهذه الخدمة بعد
                   </div>
                 } @else {
-                  <div class="sp-items__grid">
-                    @for (item of expandedItems(); track item.id) {
-                      <div class="sp-item">
-                        @if (item.imageUrl) {
-                          <app-thumb [src]="item.imageUrl" [alt]="item.name" icon="fa-tag" [size]="26" style="border-radius: 7px" />
-                        } @else {
-                          <span class="sp-item__dot"></span>
-                        }
-                        <span class="sp-item__name">{{ item.name }}</span>
-                        <div class="sp-item__actions">
-                          <button type="button" class="sp-item-btn" (click)="openEditItemModal(item)" title="تعديل">
-                            <i class="fa-solid fa-pen"></i>
-                          </button>
-                          <button type="button" class="sp-item-btn sp-item-btn--danger" (click)="onDeleteItem(item)" title="حذف">
-                            <i class="fa-solid fa-trash"></i>
-                          </button>
-                        </div>
-                      </div>
-                    }
-                  </div>
+                  <app-service-item-tree
+                    [items]="expandedItems()"
+                    [expandedIds]="expandedItemIds()"
+                    (toggle)="toggleItemExpand($event)"
+                    (addSubItem)="openCreateSubItemModal($event)"
+                    (edit)="openEditItemModal($event)"
+                    (remove)="onDeleteItem($event)"
+                  />
                 }
 
                 <button type="button" class="sp-add-item-btn" (click)="openCreateItemModal(service)">
@@ -211,6 +199,7 @@
   [open]="isItemModalOpen()"
   [item]="editingItem()"
   [defaultServiceId]="newItemServiceId()"
+  [defaultParentItemId]="newItemParentId()"
   (closed)="closeItemModal()"
-  (saved)="onItemSaved()"
+  (saved)="onItemSaved($event)"
 />

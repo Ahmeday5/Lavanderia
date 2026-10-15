@@ -13,9 +13,19 @@
     <div class="sim__icon">
       <i class="fa-solid" [class.fa-plus]="!isEditMode()" [class.fa-pen]="isEditMode()"></i>
     </div>
-    <div class="sim__title">{{ isEditMode() ? 'تعديل الصنف' : 'إضافة صنف جديد' }}</div>
+    <div class="sim__title">
+      @if (isSubItem()) {
+        {{ isEditMode() ? 'تعديل النوع' : 'إضافة نوع جديد' }}
+      } @else {
+        {{ isEditMode() ? 'تعديل الصنف' : 'إضافة صنف جديد' }}
+      }
+    </div>
     <div class="sim__subtitle">
-      {{ isEditMode() ? 'عدّل اسم الصنف أو صورته أو انقله إلى خدمة أخرى' : 'أضف صنفًا جديدًا واربطه بإحدى الخدمات' }}
+      @if (isSubItem()) {
+        {{ isEditMode() ? 'عدّل اسم النوع أو صورته أو انقله تحت صنف آخر' : 'أضف نوعًا جديدًا تحت أحد الأصناف الرئيسية' }}
+      } @else {
+        {{ isEditMode() ? 'عدّل اسم الصنف أو صورته أو انقله إلى خدمة أخرى' : 'أضف صنفًا جديدًا واربطه بإحدى الخدمات' }}
+      }
     </div>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="sim__form">
@@ -24,12 +34,12 @@
       }
       @if (uploadError()) {
         <div class="alert alert-warning" role="status">
-          تم حفظ الصنف، لكن لم تُرفع الصورة. يمكنك إعادة المحاولة الآن أو الإغلاق ورفعها لاحقًا.
+          تم حفظ {{ entityLabel() }}، لكن لم تُرفع الصورة. يمكنك إعادة المحاولة الآن أو الإغلاق ورفعها لاحقًا.
         </div>
       }
 
       <div class="sim__field">
-        <label class="form-label" for="item-name">اسم الصنف</label>
+        <label class="form-label" for="item-name">اسم {{ entityLabel() }}</label>
         <div class="sim__input-wrap">
           <i class="fa-solid fa-tag sim__input-icon"></i>
           <input
@@ -37,12 +47,12 @@
             type="text"
             class="form-control"
             formControlName="name"
-            placeholder="مثال: قميص"
+            [placeholder]="isSubItem() ? 'مثال: قميص كتان' : 'مثال: قميص'"
             autocomplete="off"
             [attr.readonly]="isSubmitting() ? '' : null"
           />
         </div>
-        <app-form-error [control]="form.controls.name" label="اسم الصنف" />
+        <app-form-error [control]="form.controls.name" [label]="'اسم ' + entityLabel()" />
       </div>
 
       <div class="sim__field">
@@ -50,7 +60,7 @@
         <app-searchable-select
           formControlName="serviceId"
           [options]="serviceOptions()"
-          [isDisabled]="isServicesLoading() || isSubmitting()"
+          [isDisabled]="isServicesLoading() || isSubmitting() || isHierarchyLocked()"
           [placeholder]="isServicesLoading() ? 'جارٍ تحميل الخدمات...' : 'اختر الخدمة'"
           searchPlaceholder="بحث عن خدمة..."
         />
@@ -58,8 +68,53 @@
       </div>
 
       <div class="sim__field">
+        <label class="form-label">
+          الصنف الأب
+          <span class="sim__optional">(اختياري)</span>
+        </label>
+        <app-searchable-select
+          formControlName="parentItemId"
+          [options]="parentOptions()"
+          [isDisabled]="isHierarchyLocked() || isParentsLoading() || isSubmitting() || !form.controls.serviceId.value"
+          [placeholder]="
+            isParentsLoading()
+              ? 'جارٍ تحميل الأصناف...'
+              : !form.controls.serviceId.value
+                ? 'اختر الخدمة أولًا'
+                : 'بدون — صنف رئيسي'
+          "
+          searchPlaceholder="بحث عن صنف..."
+        />
+
+        @if (isHierarchyLocked()) {
+          <div class="sim__hint">
+            <i class="fa-solid fa-lock"></i>
+            هذا الصنف له أنواع، لذا لا يمكن تحويله إلى نوع أو نقله إلى خدمة أخرى.
+          </div>
+        } @else if (parentsFailed()) {
+          <div class="sim__hint sim__hint--danger" role="alert">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            تعذّر تحميل أصناف الخدمة.
+            <button type="button" class="sim__hint-action" (click)="retryParents()">إعادة المحاولة</button>
+          </div>
+        } @else {
+          <div class="sim__hint">
+            <i class="fa-solid fa-circle-info"></i>
+            اختر صنفًا أبًا ليصبح هذا العنصر نوعًا تابعًا له، أو اتركه فارغًا ليكون صنفًا رئيسيًا.
+          </div>
+        }
+      </div>
+
+      @if (willResetParentPrices()) {
+        <div class="alert alert-warning sim__alert" role="status">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>إضافة نوع ستلغي أسعار المغاسل الحالية على هذا الصنف.</span>
+        </div>
+      }
+
+      <div class="sim__field">
         <app-image-picker
-          label="صورة الصنف (اختياري)"
+          [label]="'صورة ' + entityLabel() + ' (اختياري)'"
           [currentUrl]="target()?.imageUrl ?? null"
           [disabled]="isSubmitting()"
           [busy]="phase() === 'uploading'"
@@ -74,7 +129,12 @@
     <button type="button" class="sim-btn sim-btn--ghost" (click)="onClose()" [disabled]="isSubmitting()">
       {{ uploadError() ? 'إغلاق' : 'إلغاء' }}
     </button>
-    <button type="button" class="sim-btn sim-btn--brand" (click)="onSubmit()" [disabled]="isSubmitting()">
+    <button
+      type="button"
+      class="sim-btn sim-btn--brand"
+      (click)="onSubmit()"
+      [disabled]="isSubmitting() || isParentsLoading()"
+    >
       @if (isSubmitting()) {
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       }
@@ -82,7 +142,7 @@
         @case ('saving') { جارٍ الحفظ… }
         @case ('uploading') { جارٍ رفع الصورة… }
         @default {
-          {{ uploadError() ? 'إعادة رفع الصورة' : isEditMode() ? 'حفظ التعديلات' : 'إضافة الصنف' }}
+          {{ uploadError() ? 'إعادة رفع الصورة' : isEditMode() ? 'حفظ التعديلات' : 'إضافة ' + entityLabel() }}
         }
       }
     </button>

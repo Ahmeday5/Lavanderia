@@ -3,9 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { DialogService } from '../../../../core/services/dialog.service';
+import { ConfirmDialogConfig, DialogService } from '../../../../core/services/dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ApiError } from '../../../../core/models/api-response.model';
+import { apiErrorToMessage } from '../../../../core/utils/api-error.util';
 import { createPagedList } from '../../../../core/utils/paged-list.util';
 import { withLocalSearch } from '../../../../core/utils/local-search.util';
 import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
@@ -15,9 +16,11 @@ import { PageRefreshService } from '../../../../core/services/page-refresh.servi
 import { ServicesService } from '../../services/services.service';
 import { ServiceItemsService } from '../../services/service-items.service';
 import { Service } from '../../models/service.model';
-import { ServiceItem } from '../../models/service-item.model';
+import { ServiceItem, hasSubItems, isRootItem } from '../../models/service-item.model';
 import { ServiceFormModalComponent } from '../../components/service-form-modal/service-form-modal.component';
 import { ServiceItemFormModalComponent } from '../../components/service-item-form-modal/service-item-form-modal.component';
+import { ServiceItemTreeComponent } from '../../components/service-item-tree/service-item-tree.component';
+import { formatSubItemCount } from '../../utils/service-item-labels.util';
 
 @Component({
   selector: 'app-services-list',
@@ -27,6 +30,7 @@ import { ServiceItemFormModalComponent } from '../../components/service-item-for
     FormsModule,
     ServiceFormModalComponent,
     ServiceItemFormModalComponent,
+    ServiceItemTreeComponent,
     PaginationComponent,
     ThumbComponent,
     RefreshButtonComponent,
@@ -60,6 +64,8 @@ export class ServicesListComponent {
   protected readonly isItemsLoading = signal(false);
   protected readonly itemsError = signal(false);
   private readonly itemsRequest$ = new Subject<number>();
+  /** Root items of the open service whose sub-items (types) are revealed. */
+  protected readonly expandedItemIds = signal<ReadonlySet<number>>(new Set());
 
   protected readonly isServiceModalOpen = signal(false);
   protected readonly editingService = signal<Service | null>(null);
@@ -67,6 +73,7 @@ export class ServicesListComponent {
   protected readonly isItemModalOpen = signal(false);
   protected readonly editingItem = signal<ServiceItem | null>(null);
   protected readonly newItemServiceId = signal<number | null>(null);
+  protected readonly newItemParentId = signal<number | null>(null);
 
   protected readonly pageItemsCount = computed(() => {
     let sum = 0;
@@ -137,7 +144,20 @@ export class ServicesListComponent {
     }
     this.expandedServiceId.set(service.id);
     this.expandedItems.set([]);
+    this.expandedItemIds.set(new Set());
     this.loadExpandedItems();
+  }
+
+  protected toggleItemExpand(item: ServiceItem): void {
+    this.expandedItemIds.update((ids) => {
+      const next = new Set(ids);
+      if (!next.delete(item.id)) next.add(item.id);
+      return next;
+    });
+  }
+
+  private revealItem(itemId: number): void {
+    this.expandedItemIds.update((ids) => (ids.has(itemId) ? ids : new Set(ids).add(itemId)));
   }
 
   protected loadExpandedItems(): void {
@@ -194,17 +214,41 @@ export class ServicesListComponent {
     });
   }
 
-  // ── service item CRUD ──
+  // ── service item CRUD (root items and their sub-items share one form) ──
 
   protected openCreateItemModal(service: Service): void {
-    this.editingItem.set(null);
-    this.newItemServiceId.set(service.id);
-    this.isItemModalOpen.set(true);
+    this.openItemModal(null, service.id, null);
+  }
+
+  /**
+   * The first type of an item wipes its laundry prices server-side (an item
+   * with types isn't priced itself), so that case is confirmed up front.
+   */
+  protected async openCreateSubItemModal(parent: ServiceItem): Promise<void> {
+    if (!hasSubItems(parent)) {
+      const confirmed = await this.dialog.confirm({
+        title: 'إضافة أول نوع',
+        message: `إضافة نوع ستلغي أسعار المغاسل الحالية على هذا الصنف ("${parent.name}"). هل تريد المتابعة؟`,
+        confirmText: 'متابعة',
+        type: 'warning',
+      });
+      if (!confirmed) return;
+    }
+    this.openItemModal(null, parent.serviceId, parent.id);
   }
 
   protected openEditItemModal(item: ServiceItem): void {
+    this.openItemModal(item, null, null);
+  }
+
+  private openItemModal(
+    item: ServiceItem | null,
+    serviceId: number | null,
+    parentItemId: number | null,
+  ): void {
     this.editingItem.set(item);
-    this.newItemServiceId.set(null);
+    this.newItemServiceId.set(serviceId);
+    this.newItemParentId.set(parentItemId);
     this.isItemModalOpen.set(true);
   }
 
@@ -212,26 +256,40 @@ export class ServicesListComponent {
     this.isItemModalOpen.set(false);
   }
 
-  protected onItemSaved(): void {
+  protected onItemSaved(item: ServiceItem): void {
     this.isItemModalOpen.set(false);
+    // Keep a freshly added/moved type visible under its parent.
+    if (item.parentItemId !== null) this.revealItem(item.parentItemId);
     this.refreshItems();
   }
 
   protected async onDeleteItem(item: ServiceItem): Promise<void> {
-    const confirmed = await this.dialog.confirm({
-      title: 'حذف الصنف',
-      message: `هل أنت متأكد من حذف صنف "${item.name}"؟`,
-      confirmText: 'حذف',
-      type: 'danger',
-    });
+    const confirmed = await this.dialog.confirm(deleteItemConfirmation(item));
     if (!confirmed) return;
 
+    const label = isRootItem(item) ? 'الصنف' : 'النوع';
     this.serviceItemsService.delete(item.id).subscribe({
       next: () => {
-        this.toast.success('تم حذف الصنف بنجاح');
+        this.toast.success(`تم حذف ${label} بنجاح`);
         this.refreshItems();
       },
-      error: (err: ApiError) => this.toast.error(err.message),
+      error: (err: ApiError) => this.toast.error(apiErrorToMessage(err, `تعذّر حذف ${label}.`)),
     });
   }
+}
+
+/** Deleting a root item cascades to its types server-side — say so explicitly. */
+function deleteItemConfirmation(item: ServiceItem): ConfirmDialogConfig {
+  const base = { confirmText: 'حذف', type: 'danger' } as const;
+  if (!isRootItem(item)) {
+    return { ...base, title: 'حذف النوع', message: `هل أنت متأكد من حذف نوع "${item.name}"؟` };
+  }
+  if (hasSubItems(item)) {
+    return {
+      ...base,
+      title: 'حذف الصنف وأنواعه',
+      message: `سيتم حذف الصنف "${item.name}" وجميع أنواعه (${formatSubItemCount(item.subItems.length)}). هل أنت متأكد؟`,
+    };
+  }
+  return { ...base, title: 'حذف الصنف', message: `هل أنت متأكد من حذف صنف "${item.name}"؟` };
 }
