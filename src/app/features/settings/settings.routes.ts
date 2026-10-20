@@ -1,5 +1,20 @@
-import { Routes } from '@angular/router';
+import { Route, Routes } from '@angular/router';
 import { unsavedChangesGuard } from '../../core/guards/unsaved-changes.guard';
+import { CONTENT_PAGE, CONTENT_PAGES } from './content-pages';
+import { ContentPageDefinition } from './models/content-page.model';
+
+/** One route per content page; they share a component and differ only in `CONTENT_PAGE`. */
+function contentPageRoute(page: ContentPageDefinition): Route {
+  return {
+    path: page.path,
+    canDeactivate: [unsavedChangesGuard],
+    providers: [{ provide: CONTENT_PAGE, useValue: page }],
+    loadComponent: () =>
+      import('./pages/content-page-settings/content-page-settings.component').then(
+        (m) => m.ContentPageSettingsComponent,
+      ),
+  };
+}
 
 export const settingsRoutes: Routes = [
   {
@@ -18,14 +33,7 @@ export const settingsRoutes: Routes = [
             (m) => m.ContactSettingsComponent,
           ),
       },
-      {
-        path: 'privacy-policy',
-        canDeactivate: [unsavedChangesGuard],
-        loadComponent: () =>
-          import('./pages/privacy-policy-settings/privacy-policy-settings.component').then(
-            (m) => m.PrivacyPolicySettingsComponent,
-          ),
-      },
+      ...CONTENT_PAGES.map(contentPageRoute),
     ],
   },
 ];

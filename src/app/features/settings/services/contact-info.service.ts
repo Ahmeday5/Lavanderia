@@ -12,7 +12,7 @@ const ENDPOINT = 'dashboard/contacts';
 
 /**
  * Support contact details (phones + email) — a single settings record.
- * Reads bypass the HTTP cache for the same reason as `PrivacyPolicyService`.
+ * Reads bypass the HTTP cache for the same reason as `ContentPageService`.
  */
 @Injectable({ providedIn: 'root' })
 export class ContactInfoService {

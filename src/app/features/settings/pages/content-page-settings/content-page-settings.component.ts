@@ -12,33 +12,37 @@ import { formatDateTime } from '../../../../shared/utils/date-format.util';
 import { normalizeEditorHtml } from '../../../../shared/utils/html-content.util';
 import { sanitizeRichHtml } from '../../../../shared/utils/html-sanitize.util';
 import { richTextRequiredValidator } from '../../../../shared/validators/form-validation.util';
-import { PrivacyPolicy } from '../../models/privacy-policy.model';
-import { PrivacyPolicyService } from '../../services/privacy-policy.service';
+import { CONTENT_PAGE } from '../../content-pages';
+import { ContentPage } from '../../models/content-page.model';
+import { ContentPageService } from '../../services/content-page.service';
 
 type ViewMode = 'edit' | 'preview';
 
 /**
- * Word-style editor for the privacy policy. Content is authored and stored
- * as HTML; the backend serves it to the apps as-is.
+ * Word-style editor for one content page (privacy policy, scope of service, …).
+ * Which page is decided by the route through the `CONTENT_PAGE` token. Content
+ * is authored and stored as HTML; the backend serves it to the apps as-is.
  */
 @Component({
-  selector: 'app-privacy-policy-settings',
+  selector: 'app-content-page-settings',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, RichTextEditorComponent, FormErrorComponent],
-  templateUrl: './privacy-policy-settings.component.html',
-  styleUrl: './privacy-policy-settings.component.scss',
+  templateUrl: './content-page-settings.component.html',
+  styleUrl: './content-page-settings.component.scss',
   host: {
     '(window:beforeunload)': 'onBeforeUnload($event)',
     '(document:keydown.control.s)': 'onSaveShortcut($event)',
     '(document:keydown.meta.s)': 'onSaveShortcut($event)',
   },
 })
-export class PrivacyPolicySettingsComponent implements HasUnsavedChanges {
+export class ContentPageSettingsComponent implements HasUnsavedChanges {
   private readonly fb = inject(FormBuilder);
-  private readonly privacyPolicyService = inject(PrivacyPolicyService);
+  private readonly contentPageService = inject(ContentPageService);
   private readonly toast = inject(ToastService);
   private readonly sanitizer = inject(DomSanitizer);
+
+  protected readonly page = inject(CONTENT_PAGE);
 
   protected readonly form = this.fb.nonNullable.group({
     content: ['', [richTextRequiredValidator()]],
@@ -48,9 +52,9 @@ export class PrivacyPolicySettingsComponent implements HasUnsavedChanges {
     initialValue: this.form.controls.content.value,
   });
 
-  protected readonly resource = createEditableResource<PrivacyPolicy>({
-    load: () => this.privacyPolicyService.get(),
-    save: ({ content }) => this.privacyPolicyService.update({ content }),
+  protected readonly resource = createEditableResource<ContentPage>({
+    load: () => this.contentPageService.get(this.page.endpoint),
+    save: ({ content }) => this.contentPageService.update(this.page.endpoint, { content }),
     onSynced: ({ content }) => this.form.reset({ content }),
   });
 
@@ -68,9 +72,10 @@ export class PrivacyPolicySettingsComponent implements HasUnsavedChanges {
     this.sanitizer.bypassSecurityTrustHtml(sanitizeRichHtml(this.content())),
   );
 
+  /** Server message first (e.g. the 400 for empty content), generic fallback otherwise. */
   protected readonly saveErrorMessage = computed(() => {
     const error = this.resource.saveError();
-    return error ? apiErrorToMessage(error, 'تعذّر حفظ سياسة الخصوصية، حاول مرة أخرى') : null;
+    return error ? apiErrorToMessage(error, `تعذّر حفظ «${this.page.title}»، حاول مرة أخرى`) : null;
   });
 
   hasUnsavedChanges(): boolean {
@@ -93,7 +98,7 @@ export class PrivacyPolicySettingsComponent implements HasUnsavedChanges {
       content: normalizeEditorHtml(this.form.controls.content.value),
       updatedAt: null,
     });
-    if (saved) this.toast.success('تم حفظ سياسة الخصوصية بنجاح');
+    if (saved) this.toast.success(`تم حفظ «${this.page.title}» بنجاح`);
   }
 
   protected onDiscard(): void {

@@ -1,6 +1,6 @@
 @switch (resource.status()) {
   @case ('loading') {
-    <div class="sp" aria-busy="true" aria-label="جارٍ تحميل سياسة الخصوصية">
+    <div class="sp" aria-busy="true" [attr.aria-label]="'جارٍ تحميل ' + page.title">
       <div class="sp-card">
         <div class="sp-skeleton pp-skel-head"></div>
         <div class="sp-skeleton pp-skel-editor"></div>
@@ -11,7 +11,7 @@
   @case ('error') {
     <div class="sp-state" role="alert">
       <div class="sp-state__icon"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i></div>
-      <div class="sp-state__title">تعذّر تحميل سياسة الخصوصية</div>
+      <div class="sp-state__title">تعذّر تحميل «{{ page.title }}»</div>
       <div class="sp-state__subtitle">{{ resource.loadError()?.message || 'تحقق من اتصالك ثم أعد المحاولة' }}</div>
       <button type="button" class="sp-btn sp-btn--brand" (click)="resource.reload()">
         <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
@@ -24,9 +24,9 @@
     <form class="sp" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
       <section class="sp-card" aria-labelledby="pp-title">
         <div class="sp-card__head">
-          <div class="sp-card__icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></div>
+          <div class="sp-card__icon"><i class="fa-solid {{ page.icon }}" aria-hidden="true"></i></div>
           <div class="sp-card__titles">
-            <h2 class="sp-card__title" id="pp-title">سياسة الخصوصية</h2>
+            <h2 class="sp-card__title" id="pp-title">{{ page.title }}</h2>
             <p class="sp-card__subtitle">
               اكتب المحتوى ونسّقه كما في Word — يُحفظ كما هو ويظهر للمستخدمين داخل التطبيق
             </p>
@@ -35,7 +35,7 @@
           @if (resource.saved()?.updatedAt) {
             <span class="sp-meta" [title]="lastUpdated()">
               <i class="fa-regular fa-clock" aria-hidden="true"></i>
-              آخر تحديث: {{ lastUpdated() }}
+              آخر تعديل: {{ lastUpdated() }}
             </span>
           }
         </div>
@@ -76,11 +76,11 @@
         <div [hidden]="mode() !== 'edit'" role="tabpanel">
           <app-rich-text-editor
             formControlName="content"
-            placeholder="اكتب سياسة الخصوصية هنا… استخدم العناوين والقوائم لتنظيم المحتوى"
-            ariaLabel="محتوى سياسة الخصوصية"
+            [placeholder]="page.placeholder"
+            [ariaLabel]="'محتوى ' + page.title"
             [invalid]="form.controls.content.invalid && form.controls.content.touched"
           />
-          <app-form-error [control]="form.controls.content" label="محتوى سياسة الخصوصية" />
+          <app-form-error [control]="form.controls.content" [label]="'محتوى ' + page.title" />
         </div>
 
         @if (mode() === 'preview') {
@@ -89,7 +89,7 @@
               <div class="pp-phone__notch" aria-hidden="true"></div>
               <div class="pp-phone__bar">
                 <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-                سياسة الخصوصية
+                {{ page.title }}
               </div>
               <article class="pp-doc" [innerHTML]="previewHtml()"></article>
             </div>

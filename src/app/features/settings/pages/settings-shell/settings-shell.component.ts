@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { CONTENT_PAGES } from '../../content-pages';
 
 interface SettingsTab {
   route: string;
@@ -25,11 +26,6 @@ export class SettingsShellComponent {
       hint: 'أرقام الهاتف والبريد',
       icon: 'fa-headset',
     },
-    {
-      route: 'privacy-policy',
-      label: 'سياسة الخصوصية',
-      hint: 'المحتوى المعروض في التطبيق',
-      icon: 'fa-shield-halved',
-    },
+    ...CONTENT_PAGES.map(({ path, title, hint, icon }) => ({ route: path, label: title, hint, icon })),
   ];
 }
